@@ -1,30 +1,34 @@
-import  { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { LandingPage } from "./components/LandingPage";
-import { AuthPage, type UserType } from "./components/AuthPage";
-import { AdminLoginPage } from "./components/AdminLoginPage";
+import { Login } from "./pages/Login";
+import { Register } from "./pages/Register";
+import { AdminLogin } from "./pages/AdminLogin";
 import { Navigation } from "./components/Navigation";
 import { AdminDashboard } from "./components/AdminDashboard";
 import { TutorDashboard } from "./components/TutorDashboard";
 import { StudentDashboard } from "./components/StudentDashboard";
+import { type UserType } from "./types";
 
-type AppState = "landing" | "auth" | "admin-auth" | "dashboard";
+type AppState = "landing" | "login" | "register" | "admin-login" | "dashboard";
 
 function App() {
   const [currentState, setCurrentState] = useState<AppState>("landing");
   const [userType, setUserType] = useState<UserType>("student");
   const [currentView, setCurrentView] = useState("dashboard");
 
-  // Check initial path for admin-login route
   useEffect(() => {
-    if (window.location.pathname === "/admin/login") {
-      setCurrentState("admin-auth");
+    const pathname = window.location.pathname;
+    if (pathname === "/login") {
+      setCurrentState("login");
+    } else if (pathname === "/register") {
+      setCurrentState("register");
+    } else if (pathname === "/admin/login") {
+      setCurrentState("admin-login");
+    } else {
+      setCurrentState("landing");
     }
   }, []);
-
-  const handleAuthClick = () => {
-    setCurrentState("auth");
-  };
 
   const handleAuth = (type: UserType) => {
     setUserType(type);
@@ -58,12 +62,18 @@ function App() {
   return (
     <ThemeProvider>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-        {currentState === "landing" && <LandingPage onAuthClick={handleAuthClick} />}
+        {currentState === "landing" && <LandingPage onAuthClick={() => setCurrentState("login")} />}
 
-        {currentState === "auth" && <AuthPage onAuth={handleAuth} onBack={handleBack} />}
+        {currentState === "login" && (
+          <Login onAuth={handleAuth} onBack={handleBack} />
+        )}
 
-        {currentState === "admin-auth" && (
-          <AdminLoginPage onAuth={handleAuth} onBack={handleBack} />
+        {currentState === "register" && (
+          <Register onAuth={handleAuth} onBack={handleBack} />
+        )}
+
+        {currentState === "admin-login" && (
+          <AdminLogin onAuth={handleAuth} onBack={handleBack} />
         )}
 
         {currentState === "dashboard" && (
