@@ -1,39 +1,53 @@
-import React from 'react';
-import { GraduationCap, Home, BookOpen, Users, Settings, LogOut, Tag } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
+import React from "react";
+import { GraduationCap, Home, BookOpen, Users, Settings, LogOut, Tag } from "lucide-react";
+import { ThemeToggle } from "./ThemeToggle";  // Assuming you have this component
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface NavigationProps {
   currentView: string;
   onViewChange: (view: string) => void;
-  userType: 'admin' | 'tutor' | 'student';
+  userType: "admin" | "tutor" | "student";
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, userType }) => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      alert("Failed to log out. Please try again.");
+    }
+  };
+
   const getMenuItems = () => {
     switch (userType) {
-      case 'admin':
+      case "admin":
         return [
-          { id: 'dashboard', label: 'Dashboard', icon: Home },
-          { id: 'students', label: 'Students', icon: Users },
-          { id: 'tutors', label: 'Tutors', icon: Users },
-          { id: 'courses', label: 'Courses', icon: BookOpen },
-          { id: 'categories', label: 'Categories', icon: Tag },
-          { id: 'analytics', label: 'Analytics', icon: Settings },
+          { id: "dashboard", label: "Dashboard", icon: Home },
+          { id: "students", label: "Students", icon: Users },
+          { id: "tutors", label: "Tutors", icon: Users },
+          { id: "courses", label: "Courses", icon: BookOpen },
+          { id: "categories", label: "Categories", icon: Tag },
+          { id: "analytics", label: "Analytics", icon: Settings },
         ];
-      case 'tutor':
+      case "tutor":
         return [
-          { id: 'dashboard', label: 'Dashboard', icon: Home },
-          { id: 'courses', label: 'My Courses', icon: BookOpen },
-          { id: 'create-course', label: 'Create Course', icon: BookOpen },
-          { id: 'categories', label: 'Categories', icon: Tag },
-          { id: 'analytics', label: 'Analytics', icon: Settings },
+          { id: "dashboard", label: "Dashboard", icon: Home },
+          { id: "courses", label: "My Courses", icon: BookOpen },
+          { id: "create-course", label: "Create Course", icon: BookOpen },
+          { id: "categories", label: "Categories", icon: Tag },
+          { id: "analytics", label: "Analytics", icon: Settings },
         ];
-      case 'student':
+      case "student":
         return [
-          { id: 'dashboard', label: 'Dashboard', icon: Home },
-          { id: 'browse', label: 'Browse Courses', icon: BookOpen },
-          { id: 'my-courses', label: 'My Courses', icon: BookOpen },
-          { id: 'progress', label: 'Progress', icon: Settings },
+          { id: "dashboard", label: "Dashboard", icon: Home },
+          { id: "browse", label: "Browse Courses", icon: BookOpen },
+          { id: "my-courses", label: "My Courses", icon: BookOpen },
+          { id: "progress", label: "Progress", icon: Settings },
         ];
       default:
         return [];
@@ -63,11 +77,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                currentView === item.id
-                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
-              }`}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${currentView === item.id
+                  ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm"
+                  : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                }`}
+              type="button"
             >
               <item.icon className="w-5 h-5" />
               <span className="font-medium">{item.label}</span>
@@ -76,7 +90,11 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
         </div>
 
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <button className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-200"
+            type="button"
+          >
             <LogOut className="w-5 h-5" />
             <span className="font-medium">Logout</span>
           </button>

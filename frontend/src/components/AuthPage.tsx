@@ -1,47 +1,32 @@
-import React, { useState } from 'react';
-import { BookOpen, Mail, Lock, User, ArrowLeft, Image } from 'lucide-react';
-import axios from 'axios';
+import React, { useState } from "react";
+import { BookOpen, Mail, Lock, User, ArrowLeft, Image } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
-// Define the User type based on your backend User model
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  role: 'admin' | 'tutor' | 'student';
-  avatar?: string;
-  isApproved: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Define the ApiResponse type based on your ApiResponse.js
-interface ApiResponse<T> {
-  success: boolean;
-  message: string;
-  data: T;
-}
+export type UserType = "admin" | "tutor" | "student";
 
 interface AuthPageProps {
-  onAuth: (userType: 'admin' | 'tutor' | 'student') => void;
+  onAuth: (userType: UserType) => void;
   onBack: () => void;
   isAdminRoute?: boolean;
 }
 
 export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute = false }) => {
   const [isLogin, setIsLogin] = useState(true);
-  const [userType, setUserType] = useState<'admin' | 'tutor' | 'student'>(isAdminRoute ? 'admin' : 'student');
+  const [userType, setUserType] = useState<UserType>(isAdminRoute ? "admin" : "student");
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
+    name: "",
+    email: "",
+    password: "",
     avatar: null as File | null,
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const { login, register } = useAuth();
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
-    if (name === 'avatar' && files) {
+    if (name === "avatar" && files) {
       setFormData({ ...formData, avatar: files[0] });
     } else {
       setFormData({ ...formData, [name]: value });
@@ -52,52 +37,27 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     try {
       if (!isLogin) {
         // Registration
         const data = new FormData();
-        data.append('name', formData.name);
-        data.append('email', formData.email);
-        data.append('password', formData.password);
-        data.append('role', userType);
-        if (formData.avatar) {
-          data.append('profilePic', formData.avatar);
-        }
+        data.append("name", formData.name);
+        data.append("email", formData.email);
+        data.append("password", formData.password);
+        data.append("role", userType);
+        if (formData.avatar) data.append("profilePic", formData.avatar);
 
-        const response = await axios.post<ApiResponse<User>>(
-          'http://localhost:3000/api/v1/users/register',
-          data,
-          {
-            headers: { 'Content-Type': 'multipart/form-data' },
-            withCredentials: true,
-          }
-        );
-
-        if (response.data.success) {
-          onAuth(userType);
-        } else {
-          setError(response.data.message || 'Registration failed');
-        }
+        const success = await register(data);
+        if (success) onAuth(userType);
+        else throw new Error("Registration failed");
       } else {
         // Login
-        const response = await axios.post<ApiResponse<User>>(
-          'http://localhost:3000/api/v1/users/login',
-          {
-            email: formData.email,
-            password: formData.password,
-          },
-          { withCredentials: true }
-        );
-
-        if (response.data.success) {
-          onAuth(userType);
-        } else {
-          setError(response.data.message || 'Login failed');
-        }
+        const success = await login(formData.email, formData.password);
+        if (success) onAuth(userType);
+        else throw new Error("Login failed");
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
@@ -109,6 +69,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
         <button
           onClick={onBack}
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-8 transition-colors"
+          type="button"
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Home</span>
@@ -121,15 +82,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
             </div>
             <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               {isAdminRoute
-                ? (isLogin ? 'Admin Login' : 'Admin Registration')
-                : (isLogin ? 'Welcome Back' : 'Join EduPlatform')
-              }
+                ? isLogin
+                  ? "Admin Login"
+                  : "Admin Registration"
+                : isLogin
+                ? "Welcome Back"
+                : "Join EduPlatform"}
             </h2>
             <p className="text-gray-600 dark:text-gray-400">
               {isAdminRoute
-                ? (isLogin ? 'Access admin dashboard' : 'Create admin account')
-                : (isLogin ? 'Sign in to your account' : 'Create your account to get started')
-              }
+                ? isLogin
+                  ? "Access admin dashboard"
+                  : "Create admin account"
+                : isLogin
+                ? "Sign in to your account"
+                : "Create your account to get started"}
             </p>
           </div>
 
@@ -219,15 +186,15 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
                   I want to join as:
                 </label>
                 <div className="grid grid-cols-2 gap-2">
-                  {(['student', 'tutor'] as const).map((type) => (
+                  {(["student", "tutor"] as const).map((type) => (
                     <button
                       key={type}
                       type="button"
                       onClick={() => setUserType(type)}
                       className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 capitalize ${
                         userType === type
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                     >
                       {type}
@@ -241,9 +208,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                  <p className="text-sm text-red-700 dark:text-red-400 font-medium">
-                    Admin Access Only
-                  </p>
+                  <p className="text-sm text-red-700 dark:text-red-400 font-medium">Admin Access Only</p>
                 </div>
                 <p className="text-xs text-red-600 dark:text-red-400 mt-1">
                   This area is restricted to authorized administrators only.
@@ -255,10 +220,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
               type="submit"
               disabled={loading}
               className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
-                loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
               }`}
             >
-              {loading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
+              {loading ? "Processing..." : isLogin ? "Sign In" : "Create Account"}
             </button>
           </form>
 
@@ -266,18 +231,20 @@ export const AuthPage: React.FC<AuthPageProps> = ({ onAuth, onBack, isAdminRoute
             <p className="text-gray-600 dark:text-gray-400">
               {isLogin ? "Don't have an account?" : "Already have an account?"}
               <button
+                type="button"
                 onClick={() => setIsLogin(!isLogin)}
                 className="ml-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
-                {isLogin ? 'Sign up' : 'Sign in'}
+                {isLogin ? "Sign up" : "Sign in"}
               </button>
             </p>
             {!isAdminRoute && (
               <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Administrator?{' '}
+                  Administrator?{" "}
                   <button
-                    onClick={() => window.location.href = '/admin/login'}
+                    type="button"
+                    onClick={() => (window.location.href = "/admin/login")}
                     className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                   >
                     Access Admin Portal
