@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Mail, Lock, ArrowLeft, BookOpen } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import { type UserType } from "../types";
+import { useAuth } from "../../contexts/AuthContext";
+import { type UserType } from "../../types";
 
 interface AdminLoginProps {
   onAuth: (userType: UserType) => void;

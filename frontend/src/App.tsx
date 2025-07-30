@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { LandingPage } from "./components/LandingPage";
-import { Login } from "./pages/Login";
-import { Register } from "./pages/Register";
-import { AdminLogin } from "./pages/AdminLogin";
+import { LandingPage } from "./pages/student/LandingPage";
+import { Login } from "./pages/shared/Login";
+import { Register } from "./pages/shared/Register";
+import { AdminLogin } from "./pages/admin/AdminLogin";
 import { Navigation } from "./components/Navigation";
 import { AdminDashboard } from "./components/AdminDashboard";
-import { TutorDashboard } from "./components/TutorDashboard";
+import { TutorDashboard } from "./pages/tutor/TutorDashboard";
 import { StudentDashboard } from "./components/StudentDashboard";
 import { type UserType } from "./types";
 

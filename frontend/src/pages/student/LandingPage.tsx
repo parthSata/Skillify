@@ -1,6 +1,6 @@
 import React from 'react';
 import { Play, BookOpen, Users, Award, ArrowRight } from 'lucide-react';
-import { ThemeToggle } from './ThemeToggle';
+import { ThemeToggle } from '../../components/ThemeToggle';
 
 interface LandingPageProps {
     onAuthClick: () => void;

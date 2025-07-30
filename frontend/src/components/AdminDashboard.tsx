@@ -111,7 +111,7 @@ export const AdminDashboard: React.FC<TutorDashboardProps> = ({ currentView }) =
         return (
             <div className="p-6 space-y-6">
                 <div className="flex items-center justify-between">
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tutor Dashboard</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Admin Dashboard</h1>
                     <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2">
                         <Plus className="w-5 h-5" />
                         <span>Create Course</span>
