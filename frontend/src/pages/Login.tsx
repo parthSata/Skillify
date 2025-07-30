@@ -97,9 +97,8 @@ export const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
-                loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
+              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
             >
               {loading ? "Processing..." : "Sign In"}
             </button>

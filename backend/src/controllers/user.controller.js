@@ -3,18 +3,19 @@ import { ApiError } from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadInCloudinary } from "../utils/cloudinary.js";
+import jwt from "jsonwebtoken"; // <--- ADD THIS LINE
 
 const cookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production", // or VITE_NODE_ENV
-  sameSite: "strict",
+  secure: process.env.VITE_NODE_ENV === "production",
+  sameSite: "lax",
+  path: "/", // <--- ENSURE THIS!
 };
 
+// --- REGISTER ---
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
-  if (
-    [name, email, password, role].some((field) => !field?.toString().trim())
-  ) {
+  if ([name, email, password, role].some((field) => !field?.toString().trim())) {
     throw new ApiError(400, "All fields are required");
   }
   if (!["admin", "tutor", "student"].includes(role)) {
@@ -29,7 +30,8 @@ const registerUser = asyncHandler(async (req, res) => {
     const cloudinaryResponse = await uploadInCloudinary(
       req.files.profilePic[0].path
     );
-    if (!cloudinaryResponse) throw new ApiError(500, "Avatar upload failed");
+    if (!cloudinaryResponse)
+      throw new ApiError(500, "Avatar upload failed");
     avatarUrl = cloudinaryResponse.url;
   }
 
@@ -42,14 +44,12 @@ const registerUser = asyncHandler(async (req, res) => {
     isApproved: role === "tutor" ? false : true,
   });
 
-  // Generate tokens
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
   await user.save();
 
-  // Set cookies
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
     maxAge: 24 * 60 * 60 * 1000,
@@ -59,14 +59,13 @@ const registerUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const safeUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const safeUser = await User.findById(user._id).select("-password -refreshToken");
   return res
     .status(201)
     .json(new ApiResponse(201, safeUser, "User registered successfully"));
 });
 
+// --- LOGIN ---
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -78,14 +77,12 @@ const loginUser = asyncHandler(async (req, res) => {
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) throw new ApiError(401, "Invalid password");
 
-  // Generate tokens
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
   user.refreshToken = refreshToken;
   await user.save();
 
-  // Set cookies
   res.cookie("accessToken", accessToken, {
     ...cookieOptions,
     maxAge: 24 * 60 * 60 * 1000,
@@ -95,23 +92,28 @@ const loginUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const safeUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const safeUser = await User.findById(user._id).select("-password -refreshToken");
   return res
     .status(200)
     .json(new ApiResponse(200, safeUser, "User logged in successfully"));
 });
 
+// --- LOGOUT ---
 const logoutUser = asyncHandler(async (req, res) => {
-  const userId = req.user?._id;
-  if (userId) {
-    const user = await User.findById(userId);
-    if (user) {
-      user.refreshToken = null;
-      await user.save();
+  // Even if `req.user` is missing, we still want to clear cookies for security.
+  try {
+    const userId = req.user?._id;
+    if (userId) {
+      const user = await User.findById(userId);
+      if (user) {
+        user.refreshToken = null;
+        await user.save();
+      }
     }
+  } catch (err) {
+    // log if needed
   }
+  // Always clear cookies
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
   return res
@@ -119,19 +121,20 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
+// --- GET CURRENT USER ---
 const getCurrentUser = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id).select(
-    "-password -refreshToken"
-  );
+  const user = await User.findById(req.user._id).select("-password -refreshToken");
   if (!user) throw new ApiError(404, "User not found");
   return res
     .status(200)
     .json(new ApiResponse(200, user, "User fetched successfully"));
 });
 
+// --- REFRESH TOKEN ---
 const refreshToken = asyncHandler(async (req, res) => {
   const tokenFromCookie = req.cookies?.refreshToken;
-  if (!tokenFromCookie) throw new ApiError(401, "No refresh token provided");
+  if (!tokenFromCookie)
+    throw new ApiError(401, "No refresh token provided");
 
   try {
     const decoded = jwt.verify(
@@ -142,7 +145,6 @@ const refreshToken = asyncHandler(async (req, res) => {
     if (!user || user.refreshToken !== tokenFromCookie)
       throw new ApiError(401, "Invalid refresh token");
 
-    // Generate new tokens
     const newAccessToken = user.generateAccessToken();
     const newRefreshToken = user.generateRefreshToken();
 
@@ -162,6 +164,9 @@ const refreshToken = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, {}, "Token refreshed successfully"));
   } catch (error) {
+    // Always clear old cookies on refresh error!
+    res.clearCookie("accessToken", cookieOptions);
+    res.clearCookie("refreshToken", cookieOptions);
     throw new ApiError(401, "Invalid or expired refresh token");
   }
 });
