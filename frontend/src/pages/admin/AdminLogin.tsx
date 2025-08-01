@@ -8,7 +8,7 @@ interface AdminLoginProps {
   onBack: () => void;
 }
 
-export const AdminLogin: React.FC<AdminLoginProps> = ({ onAuth, onBack }) => {
+const AdminLogin: React.FC<AdminLoginProps> = ({ onAuth, onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -91,9 +91,8 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onAuth, onBack }) => {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full py-3 rounded-lg font-medium transition-colors ${
-              loading ? "bg-red-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 text-white"
-            }`}
+            className={`w-full py-3 rounded-lg font-medium transition-colors ${loading ? "bg-red-400 cursor-not-allowed" : "bg-red-600 hover:bg-red-700 text-white"
+              }`}
           >
             {loading ? "Processing..." : "Sign In"}
           </button>
@@ -102,3 +101,5 @@ export const AdminLogin: React.FC<AdminLoginProps> = ({ onAuth, onBack }) => {
     </div>
   );
 };
+
+export default AdminLogin;

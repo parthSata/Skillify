@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { ArrowLeft, BookOpen, Mail, Lock } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import type { UserType } from "../types";
+import { useAuth } from "../../contexts/AuthContext";
+import type { UserType } from "../../types";
 
 interface LoginProps {
   onAuth: (userType: UserType) => void;
   onBack: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
+const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -134,3 +134,5 @@ export const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
     </div>
   );
 };
+
+export default Login;

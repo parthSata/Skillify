@@ -29,6 +29,7 @@
     "react-router-dom": "^7.7.1"
   },
   "devDependencies": {
-    "@types/axios": "^0.9.36"
+    "@types/axios": "^0.9.36",
+    "vite-tsconfig-paths": "^5.1.4"
   }
 }

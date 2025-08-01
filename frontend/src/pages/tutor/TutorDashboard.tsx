@@ -1,14 +1,16 @@
 import React from 'react';
 import { BookOpen, Users, DollarSign, TrendingUp, Plus, Edit, Trash2, Tag } from 'lucide-react';
-import { Modal } from './Modal';
-import { CourseForm } from './CourseForm';
-import { CategoryForm } from './CategoryForm';
+import { Modal } from '../../components/Modal';
+import { CourseForm } from '../../components/CourseForm';
+import { CategoryForm } from '../../components//CategoryForm';
 
 interface TutorDashboardProps {
     currentView: string;
+    onViewChange: (view: string) => void;
+
 }
 
-export const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
+const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
     const [showCourseModal, setShowCourseModal] = React.useState(false);
     const [showCategoryModal, setShowCategoryModal] = React.useState(false);
     const [editingCourse, setEditingCourse] = React.useState<any>(null);
@@ -308,3 +310,5 @@ export const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) =
         </div>
     );
 };
+
+export default TutorDashboard;

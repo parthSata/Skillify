@@ -1,12 +1,14 @@
 import React from 'react';
-import { BookOpen,  Clock, Award, Search, Filter } from 'lucide-react';
+import { BookOpen, Clock, Award, Search, Filter } from 'lucide-react';
 import { CourseCard } from './CourseCard';
 
 interface StudentDashboardProps {
   currentView: string;
+  onViewChange: (view: string) => void;
+
 }
 
-export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
+const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
   const studentStats = [
     { title: 'Enrolled Courses', value: '12', change: '+3', icon: BookOpen, color: 'blue' },
     { title: 'Completed', value: '8', change: '+2', icon: Award, color: 'green' },
@@ -98,7 +100,7 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView 
                   <span className="text-sm text-gray-500 dark:text-gray-400">{item.progress}%</span>
                 </div>
                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-2">
-                  <div 
+                  <div
                     className="bg-blue-600 h-2 rounded-full transition-all duration-300"
                     style={{ width: `${item.progress}%` }}
                   ></div>
@@ -140,11 +142,10 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView 
           {['All', 'Web Development', 'Data Science', 'Design', 'Mobile', 'AI/ML'].map((category) => (
             <button
               key={category}
-              className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
-                category === 'All'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
+              className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${category === 'All'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                }`}
             >
               {category}
             </button>
@@ -179,3 +180,4 @@ export const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView 
     </div>
   );
 };
+export default StudentDashboard;

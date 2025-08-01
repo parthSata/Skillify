@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { ArrowLeft, BookOpen, User, Image, Mail, Lock } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
-import type { UserType } from "../types";
+import { useAuth } from "../../contexts/AuthContext";
+import type { UserType } from "../../types";
 
 interface RegisterProps {
   onAuth: (userType: UserType) => void;
   onBack: () => void;
 }
 
-export const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
+const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -150,11 +150,10 @@ export const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
                     key={type}
                     type="button"
                     onClick={() => setUserType(type)}
-                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 capitalize ${
-                      userType === type
+                    className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 capitalize ${userType === type
                         ? "bg-blue-600 text-white"
                         : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-                    }`}
+                      }`}
                   >
                     {type}
                   </button>
@@ -165,9 +164,8 @@ export const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
-                loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
-              }`}
+              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
+                }`}
             >
               {loading ? "Processing..." : "Create Account"}
             </button>
@@ -190,3 +188,5 @@ export const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
     </div>
   );
 };
+
+export default Register;

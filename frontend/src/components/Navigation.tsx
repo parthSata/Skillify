@@ -10,7 +10,7 @@ interface NavigationProps {
   userType: "admin" | "tutor" | "student";
 }
 
-export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, userType }) => {
+ const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChange, userType }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
@@ -103,3 +103,5 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, onViewChang
     </nav>
   );
 };
+
+export default Navigation;

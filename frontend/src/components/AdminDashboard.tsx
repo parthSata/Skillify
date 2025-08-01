@@ -6,10 +6,10 @@ import { CategoryForm } from './CategoryForm';
 
 interface TutorDashboardProps {
     currentView: string;
+    onViewChange: (view: string) => void;
 }
 
-export const AdminDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
-    // const [selectedTab, setSelectedTab] = useState('overview');
+const AdminDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
     const [showCourseModal, setShowCourseModal] = useState(false);
     const [showCategoryModal, setShowCategoryModal] = useState(false);
     const [editingCourse, setEditingCourse] = useState<any>(null);
@@ -344,3 +344,5 @@ export const AdminDashboard: React.FC<TutorDashboardProps> = ({ currentView }) =
         </div>
     );
 };
+
+export default AdminDashboard;
