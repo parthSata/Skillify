@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, BookOpen, Mail, Lock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import type { UserType } from "../../types";
 
 interface LoginProps {
@@ -12,8 +13,9 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const { login } = useAuth();
+  const { login, user } = useAuth();
+  const navigate = useNavigate();
+  const hasRedirected = useRef(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -25,14 +27,38 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
     setLoading(true);
     try {
       const success = await login(formData.email, formData.password);
-      if (success) onAuth("student"); // Adjust if you want to detect real user type
-      else throw new Error("Login failed");
+      if (success && user) {
+        onAuth(user.role);
+        hasRedirected.current = true;
+        const redirectPath =
+          user.role === "admin"
+            ? "/admin/dashboard"
+            : user.role === "tutor"
+              ? "/tutor/dashboard"
+              : "/student/dashboard";
+        navigate(redirectPath, { replace: true });
+      } else {
+        throw new Error("Login failed");
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (user && !hasRedirected.current && user.role) {
+      hasRedirected.current = true;
+      const redirectPath =
+        user.role === "admin"
+          ? "/admin/dashboard"
+          : user.role === "tutor"
+            ? "/tutor/dashboard"
+            : "/student/dashboard";
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center px-4">
@@ -109,7 +135,7 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
               Don't have an account?{" "}
               <button
                 type="button"
-                onClick={() => (window.location.href = "/register")}
+                onClick={() => navigate("/register")}
                 className="ml-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
                 Sign up
@@ -121,7 +147,7 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
                 Administrator?{" "}
                 <button
                   type="button"
-                  onClick={() => (window.location.href = "/admin/login")}
+                  onClick={() => navigate("/admin/login")}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
                 >
                   Access Admin Portal

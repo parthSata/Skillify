@@ -10,6 +10,7 @@ export interface User {
   isApproved: boolean;
   createdAt: string;
   updatedAt: string;
+  __v?: number;
 }
 
 interface AuthContextType {
@@ -24,7 +25,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Axios default config
 axios.defaults.withCredentials = true;
 axios.defaults.baseURL = "http://localhost:3000/api/v1";
 
@@ -32,13 +32,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Only checkAuth ONCE on mount
+  useEffect(() => {
+    checkAuth();
+    // eslint-disable-next-line
+  }, []);
+
   const checkAuth = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get<{ data: User }>("/users/me", { withCredentials: true });
-      setUser(data.data);
-      return true;
-    } catch {
+      const { data } = await axios.get<{ statusCode: number; data: string; message: User; success: boolean }>("/users/me", {
+        withCredentials: true,
+      });
+      if (data.success && data.message) {
+        setUser(data.message);
+        return true;
+      } else {
+        setUser(null);
+        return false;
+      }
+    } catch (error) {
       setUser(null);
       return false;
     } finally {
@@ -56,18 +69,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   const login = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { data } = await axios.post<{ data: User; token: string }>("/users/login", { email, password });
-      setUser(data.data);
-      localStorage.setItem("accessToken", data.token);
-      return true;
-    } catch {
+      const { data } = await axios.post<{ statusCode: number; data: string; message: User; token: string; success: boolean }>(
+        "/users/login",
+        { email, password }
+      );
+      if (data.success && data.message) {
+        setUser(data.message); // user state will update here
+        localStorage.setItem("accessToken", data.token);
+        return true;
+      } else {
+        throw new Error("Login failed: Invalid user data");
+      }
+    } catch (error) {
       setUser(null);
       return false;
     } finally {
@@ -75,16 +91,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (data: FormData) => {
+  const register = async (formData: FormData) => {
     try {
       setLoading(true);
-      const { data: response } = await axios.post<{ data: User; token: string }>("/users/register", data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      setUser(response.data);
-      localStorage.setItem("accessToken", response.token);
-      return true;
-    } catch {
+      const { data: response } = await axios.post<{ statusCode: number; data: string; message: User; token: string; success: boolean }>(
+        "/users/register",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        }
+      );
+      if (response.success && response.message) {
+        setUser(response.message);
+        localStorage.setItem("accessToken", response.token);
+        return true;
+      } else {
+        throw new Error("Registration failed: Invalid user data");
+      }
+    } catch (error) {
       setUser(null);
       return false;
     } finally {
