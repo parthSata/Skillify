@@ -1,14 +1,14 @@
 import React from 'react';
 import { BookOpen, Clock, Award, Search, Filter } from 'lucide-react';
 import { CourseCard } from './CourseCard';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentDashboardProps {
   currentView: string;
-  onViewChange: (view: string) => void;
-
 }
 
 const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
+  const navigate = useNavigate();
   const studentStats = [
     { title: 'Enrolled Courses', value: '12', change: '+3', icon: BookOpen, color: 'blue' },
     { title: 'Completed', value: '8', change: '+2', icon: Award, color: 'green' },
@@ -27,7 +27,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
       rating: 4.8,
       students: 2340,
       duration: '12 hours',
-      category: 'Web Development'
+      category: 'Web Development',
     },
     {
       id: '2',
@@ -39,7 +39,7 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
       rating: 4.9,
       students: 1890,
       duration: '15 hours',
-      category: 'Data Science'
+      category: 'Data Science',
     },
     {
       id: '3',
@@ -51,8 +51,8 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
       rating: 4.7,
       students: 1560,
       duration: '10 hours',
-      category: 'Design'
-    }
+      category: 'Design',
+    },
   ];
 
   const myProgress = [
@@ -60,6 +60,10 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
     { course: 'Python Basics', progress: 45, nextLesson: 'Object-Oriented Programming' },
     { course: 'UI/UX Design', progress: 90, nextLesson: 'Final Project' },
   ];
+
+  const handleViewChange = (view: string) => {
+    navigate(`/student/${view}`);
+  };
 
   if (currentView === 'dashboard') {
     return (
@@ -69,9 +73,19 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome back, Student!</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">Continue your learning journey</p>
           </div>
+          <div className="space-x-2">
+            <button onClick={() => handleViewChange('browse')} className="px-4 py-2 bg-blue-600 text-white rounded">
+              Browse Courses
+            </button>
+            <button onClick={() => handleViewChange('my-courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+              My Courses
+            </button>
+            <button onClick={() => handleViewChange('progress')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+              Progress
+            </button>
+          </div>
         </div>
 
-        {/* Stats Grid */}
         <div className="grid md:grid-cols-4 gap-6">
           {studentStats.map((stat, index) => (
             <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300">
@@ -89,7 +103,6 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
           ))}
         </div>
 
-        {/* Continue Learning */}
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Continue Learning</h3>
           <div className="space-y-4">
@@ -119,9 +132,19 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
       <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Browse Courses</h1>
+          <div className="space-x-2">
+            <button onClick={() => handleViewChange('dashboard')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+              Dashboard
+            </button>
+            <button onClick={() => handleViewChange('my-courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+              My Courses
+            </button>
+            <button onClick={() => handleViewChange('progress')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+              Progress
+            </button>
+          </div>
         </div>
 
-        {/* Search and Filter */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -137,22 +160,21 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
           </button>
         </div>
 
-        {/* Course Categories */}
         <div className="flex flex-wrap gap-2">
           {['All', 'Web Development', 'Data Science', 'Design', 'Mobile', 'AI/ML'].map((category) => (
             <button
               key={category}
-              className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${category === 'All'
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                }`}
+              className={`px-4 py-2 rounded-full font-medium transition-all duration-200 ${
+                category === 'All'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+              }`}
             >
               {category}
             </button>
           ))}
         </div>
 
-        {/* Course Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {featuredCourses.map((course) => (
             <CourseCard
@@ -168,9 +190,23 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 capitalize">
-        {currentView.replace('-', ' ')}
-      </h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">{currentView.replace('-', ' ')}</h1>
+        <div className="space-x-2">
+          <button onClick={() => handleViewChange('dashboard')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+            Dashboard
+          </button>
+          <button onClick={() => handleViewChange('browse')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+            Browse
+          </button>
+          <button onClick={() => handleViewChange('my-courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+            My Courses
+          </button>
+          <button onClick={() => handleViewChange('progress')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
+            Progress
+          </button>
+        </div>
+      </div>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
         <p className="text-gray-600 dark:text-gray-400">
           {currentView === 'my-courses' && 'Access all your enrolled courses and track your progress.'}
@@ -180,4 +216,5 @@ const StudentDashboard: React.FC<StudentDashboardProps> = ({ currentView }) => {
     </div>
   );
 };
+
 export default StudentDashboard;

@@ -1,19 +1,21 @@
-import { Routes, Route } from "react-router-dom";
-import { TutorDashboard } from "@/components/index";
+import { Routes, Route } from 'react-router-dom';
+import { TutorDashboard } from '@/components/index';
 
 interface TutorNavigationProps {
-    currentView: string;
-    onViewChange: (view: string) => void;
+  initialView?: string;
 }
 
-const TutorNavigation = ({ currentView, onViewChange }: TutorNavigationProps) => {
-    return (
-        <Routes>
-            <Route path="/" element={<TutorDashboard currentView={currentView} onViewChange={onViewChange} />} />
-            <Route path="dashboard" element={<TutorDashboard currentView={currentView} onViewChange={onViewChange} />} />
-            {/* Add more tutor routes here, e.g., <Route path="courses" element={<TutorCourses />} /> */}
-        </Routes>
-    );
+const TutorNavigation: React.FC<TutorNavigationProps> = ({ initialView = 'dashboard' }) => {
+  return (
+    <Routes>
+      <Route path="/" element={<TutorDashboard currentView={initialView} />} />
+      <Route path="dashboard" element={<TutorDashboard currentView="dashboard" />} />
+      <Route path="courses" element={<TutorDashboard currentView="courses" />} />
+      <Route path="create-course" element={<TutorDashboard currentView="create-course" />} />
+      <Route path="categories" element={<TutorDashboard currentView="categories" />} />
+      <Route path="analytics" element={<TutorDashboard currentView="analytics" />} />
+    </Routes>
+  );
 };
 
 export default TutorNavigation;

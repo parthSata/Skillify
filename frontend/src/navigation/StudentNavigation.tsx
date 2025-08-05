@@ -1,19 +1,20 @@
-import { Routes, Route } from "react-router-dom";
-import { StudentDashboard } from "@/components/index";
+import { Routes, Route } from 'react-router-dom';
+import { StudentDashboard } from '@/components/index';
 
 interface StudentNavigationProps {
-    currentView: string;
-    onViewChange: (view: string) => void;
+  initialView?: string;
 }
 
-const StudentNavigation = ({ currentView, onViewChange }: StudentNavigationProps) => {
-    return (
-        <Routes>
-            <Route path="/" element={<StudentDashboard currentView={currentView} onViewChange={onViewChange} />} />
-            <Route path="dashboard" element={<StudentDashboard currentView={currentView} onViewChange={onViewChange} />} />
-            {/* Add more student routes here, e.g., <Route path="courses" element={<StudentCourses />} /> */}
-        </Routes>
-    );
+const StudentNavigation: React.FC<StudentNavigationProps> = ({ initialView = 'dashboard' }) => {
+  return (
+    <Routes>
+      <Route path="/" element={<StudentDashboard currentView={initialView} />} />
+      <Route path="dashboard" element={<StudentDashboard currentView="dashboard" />} />
+      <Route path="browse" element={<StudentDashboard currentView="browse" />} />
+      <Route path="my-courses" element={<StudentDashboard currentView="my-courses" />} />
+      <Route path="progress" element={<StudentDashboard currentView="progress" />} />
+    </Routes>
+  );
 };
 
 export default StudentNavigation;

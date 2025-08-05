@@ -1,19 +1,21 @@
-import { Routes, Route } from "react-router-dom";
-import { AdminDashboard } from "@/components/index";
+import { Routes, Route } from 'react-router-dom';
+import { AdminDashboard } from '@/components/index';
 
 interface AdminNavigationProps {
-    currentView: string;
-    onViewChange: (view: string) => void;
+  initialView?: string;
 }
 
-const AdminNavigation = ({ currentView, onViewChange }: AdminNavigationProps) => {
-    return (
-        <Routes>
-            <Route path="/" element={<AdminDashboard currentView={currentView} onViewChange={onViewChange} />} />
-            <Route path="dashboard" element={<AdminDashboard currentView={currentView} onViewChange={onViewChange} />} />
-            {/* Add more admin routes here, e.g., <Route path="users" element={<UsersManagement />} /> */}
-        </Routes>
-    );
+const AdminNavigation: React.FC<AdminNavigationProps> = ({ initialView = 'dashboard' }) => {
+  return (
+    <Routes>
+      <Route path="/" element={<AdminDashboard currentView={initialView} />} />
+      <Route path="dashboard" element={<AdminDashboard currentView="dashboard" />} />
+      <Route path="courses" element={<AdminDashboard currentView="courses" />} />
+      <Route path="categories" element={<AdminDashboard currentView="categories" />} />
+      <Route path="create-course" element={<AdminDashboard currentView="create-course" />} />
+      <Route path="analytics" element={<AdminDashboard currentView="analytics" />} />
+    </Routes>
+  );
 };
 
 export default AdminNavigation;

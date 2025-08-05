@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
-import { ArrowLeft, BookOpen, Mail, Lock } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
-import type { UserType } from "../../types";
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, BookOpen, Mail, Lock } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import type { UserType } from '@/types';
 
 interface LoginProps {
   onAuth: (userType: UserType) => void;
@@ -10,9 +10,10 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const hasRedirected = useRef(false);
@@ -31,17 +32,17 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
         onAuth(user.role);
         hasRedirected.current = true;
         const redirectPath =
-          user.role === "admin"
-            ? "/admin/dashboard"
-            : user.role === "tutor"
-              ? "/tutor/dashboard"
-              : "/student/dashboard";
+          user.role === 'admin'
+            ? '/admin/dashboard'
+            : user.role === 'tutor'
+              ? '/tutor/dashboard'
+              : '/student/dashboard';
         navigate(redirectPath, { replace: true });
       } else {
-        throw new Error("Login failed");
+        throw new Error('Login failed: User data not available');
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -51,11 +52,11 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
     if (user && !hasRedirected.current && user.role) {
       hasRedirected.current = true;
       const redirectPath =
-        user.role === "admin"
-          ? "/admin/dashboard"
-          : user.role === "tutor"
-            ? "/tutor/dashboard"
-            : "/student/dashboard";
+        user.role === 'admin'
+          ? '/admin/dashboard'
+          : user.role === 'tutor'
+            ? '/tutor/dashboard'
+            : '/student/dashboard';
       navigate(redirectPath, { replace: true });
     }
   }, [user, navigate]);
@@ -67,6 +68,7 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
           onClick={onBack}
           className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-8 transition-colors"
           type="button"
+          disabled={loading}
         >
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Home</span>
@@ -84,6 +86,11 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
               <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
+              {debugMode && (
+                <p className="text-xs text-red-600 dark:text-red-300 mt-2">
+                  Check browser console for detailed error information.
+                </p>
+              )}
             </div>
           )}
 
@@ -100,6 +107,7 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
                   className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
                   placeholder="Enter your email"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -116,6 +124,7 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
                   className="w-full pl-12 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white transition-all duration-200"
                   placeholder="Enter your password"
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -123,20 +132,22 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${loading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 text-white"
-                }`}
+              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
+                loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+              }`}
             >
-              {loading ? "Processing..." : "Sign In"}
+              {loading ? 'Processing...' : 'Sign In'}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-gray-600 dark:text-gray-400">
-              Don't have an account?{" "}
+              Don't have an account?{' '}
               <button
                 type="button"
-                onClick={() => navigate("/register")}
+                onClick={() => navigate('/register')}
                 className="ml-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                disabled={loading}
               >
                 Sign up
               </button>
@@ -144,15 +155,26 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
 
             <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Administrator?{" "}
+                Administrator?{' '}
                 <button
                   type="button"
-                  onClick={() => navigate("/admin/login")}
+                  onClick={() => navigate('/admin/login')}
                   className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                  disabled={loading}
                 >
                   Access Admin Portal
                 </button>
               </p>
+            </div>
+
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={() => setDebugMode(!debugMode)}
+                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              >
+                {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
+              </button>
             </div>
           </div>
         </div>
