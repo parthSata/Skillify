@@ -1,22 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+// Login.tsx
+import React, { useState } from 'react';
 import { ArrowLeft, BookOpen, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import type { UserType } from '@/types';
 
 interface LoginProps {
-  onAuth: (userType: UserType) => void;
   onBack: () => void;
 }
 
-const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
+const Login: React.FC<LoginProps> = ({ onBack }) => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
-  const { login, user } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const hasRedirected = useRef(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -27,39 +24,13 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
     setError(null);
     setLoading(true);
     try {
-      const success = await login(formData.email, formData.password);
-      if (success && user) {
-        onAuth(user.role);
-        hasRedirected.current = true;
-        const redirectPath =
-          user.role === 'admin'
-            ? '/admin/dashboard'
-            : user.role === 'tutor'
-              ? '/tutor/dashboard'
-              : '/student/dashboard';
-        navigate(redirectPath, { replace: true });
-      } else {
-        throw new Error('Login failed: User data not available');
-      }
+      await login(formData.email, formData.password, navigate);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || 'An unexpected error occurred during login.');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (user && !hasRedirected.current && user.role) {
-      hasRedirected.current = true;
-      const redirectPath =
-        user.role === 'admin'
-          ? '/admin/dashboard'
-          : user.role === 'tutor'
-            ? '/tutor/dashboard'
-            : '/student/dashboard';
-      navigate(redirectPath, { replace: true });
-    }
-  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex items-center justify-center px-4">
@@ -86,11 +57,6 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
           {error && (
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
               <p className="text-sm text-red-700 dark:text-red-400">{error}</p>
-              {debugMode && (
-                <p className="text-xs text-red-600 dark:text-red-300 mt-2">
-                  Check browser console for detailed error information.
-                </p>
-              )}
             </div>
           )}
 
@@ -132,9 +98,8 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${
-                loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
-              }`}
+              className={`w-full py-3 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
             >
               {loading ? 'Processing...' : 'Sign In'}
             </button>
@@ -165,16 +130,6 @@ const Login: React.FC<LoginProps> = ({ onAuth, onBack }) => {
                   Access Admin Portal
                 </button>
               </p>
-            </div>
-
-            <div className="mt-4">
-              <button
-                type="button"
-                onClick={() => setDebugMode(!debugMode)}
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
-              </button>
             </div>
           </div>
         </div>

@@ -15,7 +15,9 @@ const cookieOptions = {
 // --- REGISTER ---
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
-  if ([name, email, password, role].some((field) => !field?.toString().trim())) {
+  if (
+    [name, email, password, role].some((field) => !field?.toString().trim())
+  ) {
     throw new ApiError(400, "All fields are required");
   }
   if (!["admin", "tutor", "student"].includes(role)) {
@@ -26,12 +28,11 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "User with this email already exists");
 
   let avatarUrl = "";
-  if (req.files && req.files.profilePic && req.files.profilePic[0]) {
+  if (req.files && req.files.avatar && req.files.avatar[0]) {
     const cloudinaryResponse = await uploadInCloudinary(
-      req.files.profilePic[0].path
+      req.files.avatar[0].path
     );
-    if (!cloudinaryResponse)
-      throw new ApiError(500, "Avatar upload failed");
+    if (!cloudinaryResponse) throw new ApiError(500, "Avatar upload failed");
     avatarUrl = cloudinaryResponse.url;
   }
 
@@ -59,12 +60,13 @@ const registerUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const safeUser = await User.findById(user._id).select("-password -refreshToken");
+  const safeUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
   return res
     .status(201)
     .json(new ApiResponse(201, safeUser, "User registered successfully"));
 });
-
 // --- LOGIN ---
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
@@ -92,7 +94,9 @@ const loginUser = asyncHandler(async (req, res) => {
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  const safeUser = await User.findById(user._id).select("-password -refreshToken");
+  const safeUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
   return res
     .status(200)
     .json(new ApiResponse(200, safeUser, "User logged in successfully"));
@@ -133,8 +137,7 @@ const getCurrentUser = asyncHandler(async (req, res) => {
 // --- REFRESH TOKEN ---
 const refreshToken = asyncHandler(async (req, res) => {
   const tokenFromCookie = req.cookies?.refreshToken;
-  if (!tokenFromCookie)
-    throw new ApiError(401, "No refresh token provided");
+  if (!tokenFromCookie) throw new ApiError(401, "No refresh token provided");
 
   try {
     const decoded = jwt.verify(

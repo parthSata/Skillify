@@ -1,14 +1,15 @@
+// Register.tsx
 import React, { useState } from "react";
 import { ArrowLeft, BookOpen, User, Image, Mail, Lock } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import type { UserType } from "../../types";
 
 interface RegisterProps {
-  onAuth: (userType: UserType) => void;
   onBack: () => void;
 }
 
-const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
+const Register: React.FC<RegisterProps> = ({ onBack }) => {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -20,6 +21,7 @@ const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
   const [loading, setLoading] = useState(false);
 
   const { register } = useAuth();
+  const navigate = useNavigate();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, files } = e.target;
@@ -40,13 +42,12 @@ const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
       data.append("email", formData.email);
       data.append("password", formData.password);
       data.append("role", userType);
-      if (formData.avatar) data.append("profilePic", formData.avatar);
+      if (formData.avatar) data.append("avatar", formData.avatar);
 
-      const success = await register(data);
-      if (success) onAuth(userType);
-      else throw new Error("Registration failed");
+      // Pass navigate to the register function
+      await register(data, navigate);
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || "Registration failed");
     } finally {
       setLoading(false);
     }
@@ -151,8 +152,8 @@ const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
                     type="button"
                     onClick={() => setUserType(type)}
                     className={`px-4 py-2 rounded-lg font-medium transition-all duration-200 capitalize ${userType === type
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
                       }`}
                   >
                     {type}
@@ -176,7 +177,7 @@ const Register: React.FC<RegisterProps> = ({ onAuth, onBack }) => {
               Already have an account?{" "}
               <button
                 type="button"
-                onClick={() => (window.location.href = "/login")}
+                onClick={() => navigate("/login")}
                 className="ml-1 text-blue-600 dark:text-blue-400 hover:underline font-medium"
               >
                 Sign in

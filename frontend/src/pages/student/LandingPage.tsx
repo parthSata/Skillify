@@ -1,12 +1,20 @@
+// LandingPage.tsx
 import React from 'react';
-import { Play, BookOpen, Users, Award, ArrowRight } from 'lucide-react';
-import { ThemeToggle } from '../../components/ThemeToggle';
+import { Play, BookOpen, Users, Award, ArrowRight, LogOut } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
-interface LandingPageProps {
-    onAuthClick: () => void;
-}
+interface LandingPageProps { }
 
-const LandingPage: React.FC<LandingPageProps> = ({ onAuthClick }) => {
+const LandingPage: React.FC<LandingPageProps> = () => {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        await logout(navigate);
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900">
             {/* Header */}
@@ -21,12 +29,22 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAuthClick }) => {
                         </div>
                         <div className="flex items-center space-x-4">
                             <ThemeToggle />
-                            <button
-                                onClick={onAuthClick}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
-                            >
-                                Get Started
-                            </button>
+                            {user ? (
+                                <button
+                                    onClick={handleLogout}
+                                    className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105 flex items-center space-x-2"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                    <span>Logout</span>
+                                </button>
+                            ) : (
+                                <button
+                                    onClick={() => navigate('/login')}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-200 transform hover:scale-105"
+                                >
+                                    Get Started
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -46,7 +64,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onAuthClick }) => {
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
                             <button
-                                onClick={onAuthClick}
+                                onClick={() => navigate('/login')}
                                 className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg font-medium text-lg transition-all duration-200 transform hover:scale-105 flex items-center space-x-2"
                             >
                                 <span>Start Learning</span>

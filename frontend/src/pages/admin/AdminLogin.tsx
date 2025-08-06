@@ -1,29 +1,29 @@
+// AdminLogin.tsx
 import React, { useState } from "react";
 import { Mail, Lock, ArrowLeft, BookOpen } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
-import { type UserType } from "../../types";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 interface AdminLoginProps {
-  onAuth: (userType: UserType) => void;
   onBack: () => void;
 }
 
-const AdminLogin: React.FC<AdminLoginProps> = ({ onAuth, onBack }) => {
+const AdminLogin: React.FC<AdminLoginProps> = ({ onBack }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) onAuth("admin");
-      else throw new Error("Invalid admin credentials");
+      // Pass the navigate function as the third argument
+      await login(email, password, navigate);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {

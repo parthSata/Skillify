@@ -13,7 +13,7 @@ import { ApiError } from "../utils/ApiError.js";
 
 const router = express.Router();
 
-const validate = (req, res, next) => {
+const validate = (  req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     throw new ApiError(400, "Validation failed", errors.array());
