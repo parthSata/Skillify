@@ -1,4 +1,3 @@
-// AuthContext.tsx
 import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import axios from "axios";
 
@@ -32,7 +31,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 axios.defaults.withCredentials = true;
-axios.defaults.baseURL = "http://localhost:3000/api/v1";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -48,9 +46,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       setLoading(true);
-      const { data } = await axios.get<ApiResponse<User>>("/users/me");
+      const { data } = await axios.get<ApiResponse<User>>("http://localhost:3000/api/v1/users/me");
       if (data.success && data.data) {
-        setUser(data.data);
+        console.log("🚀 ~ checkAuth ~ data:", data.message);
+        // Corrected: Accessing user data from data.data
+        const userData = data.data;
+        if (userData && typeof userData._id === 'string' && typeof userData.email === 'string' && typeof userData.role === 'string') {
+          const newUser: User = {
+            _id: userData._id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            isApproved: userData.isApproved,
+            avatar: userData.avatar,
+            createdAt: userData.createdAt,
+            updatedAt: userData.updatedAt,
+            __v: userData.__v,
+          };
+          setUser(newUser);
+        } else {
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
@@ -67,12 +83,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleAuthSuccess = (userData: User, navigate: any) => {
     setUser(userData);
+    console.log("🚀 ~ handleAuthSuccess ~ userData:", userData)
     const redirectPath =
       userData.role === 'admin'
-        ? '/admin'
+        ? '/admin/dashboard'
         : userData.role === 'tutor'
-          ? '/tutor'
-          : '/student';
+          ? '/tutor/dashboard'
+          : '/student/dashboard';
     navigate(redirectPath, { replace: true });
     setLoading(false);
   };
@@ -80,9 +97,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string, navigate: any) => {
     try {
       setLoading(true);
-      const { data } = await axios.post<ApiResponse<User>>("/users/login", { email, password });
+      const { data } = await axios.post<ApiResponse<User>>("http://localhost:3000/api/v1/users/login", { email, password });
+      // Corrected: Check and access user data from data.data
       if (data.success && data.data) {
-        handleAuthSuccess(data.data, navigate);
+        const userData = data.data;
+        if (userData && typeof userData._id === 'string' && typeof userData.email === 'string' && typeof userData.role === 'string') {
+          const newUser: User = {
+            _id: userData._id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            isApproved: userData.isApproved,
+            avatar: userData.avatar,
+            createdAt: userData.createdAt,
+            updatedAt: userData.updatedAt,
+            __v: userData.__v,
+          };
+          handleAuthSuccess(newUser, navigate);
+        } else {
+          throw new Error('Login failed: Invalid user data received from API');
+        }
       } else {
         throw new Error('Login failed');
       }
@@ -95,11 +129,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (formData: FormData, navigate: any) => {
     try {
       setLoading(true);
-      const { data: response } = await axios.post<ApiResponse<User>>("/users/register", formData, {
+      const { data: response } = await axios.post<ApiResponse<User>>("http://localhost:3000/api/v1/users/register", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
+      // Corrected: Check and access user data from response.data
       if (response.success && response.data) {
-        handleAuthSuccess(response.data, navigate);
+        const userData = response.data;
+        if (userData && typeof userData._id === 'string' && typeof userData.email === 'string' && typeof userData.role === 'string') {
+          const newUser: User = {
+            _id: userData._id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            isApproved: userData.isApproved,
+            avatar: userData.avatar,
+            createdAt: userData.createdAt,
+            updatedAt: userData.updatedAt,
+            __v: userData.__v,
+          };
+          handleAuthSuccess(newUser, navigate);
+        } else {
+          throw new Error('Registration failed: Invalid user data received from API');
+        }
       } else {
         throw new Error('Registration failed');
       }
@@ -112,7 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async (navigate: any) => {
     skipAuthCheck.current = true;
     try {
-      await axios.post("/users/logout");
+      await axios.post("http://localhost:3000/api/v1/users/logout");
     } finally {
       setUser(null);
       navigate("/", { replace: true });

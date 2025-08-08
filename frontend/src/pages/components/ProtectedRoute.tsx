@@ -8,8 +8,9 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
-const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+const ProtectedRoute = ({ allowedRoles, children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
+  console.log("🚀 ~ ProtectedRoute ~ user:", user)
   const location = useLocation();
 
   // Wait for the initial authentication check to complete.
@@ -25,10 +26,10 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // If user exists, but their role is not allowed, redirect to unauthorized page.
   // user.role should now be defined if user is not null.
-  // if (!allowedRoles.includes(user.role)) {
-  //   console.log("🚀 ~ Unauthorized user.role:", user.role);
-  //   return <Navigate to="/unauthorized" state={{ from: location }} replace />;
-  // }
+  if (!allowedRoles.includes(user.role)) {
+    console.log("🚀 ~ Unauthorized user.role:", user.role);
+    return <Navigate to="/unauthorized" state={{ from: location }} replace />;
+  }
 
   // Check for unapproved tutors
   if (user.role === 'tutor' && !user.isApproved) {
