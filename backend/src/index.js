@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import ConnectDB from "./db/config.js";
 import { server } from "./app.js";
+import { createInitialAdmin } from "./controllers/admin.controller.js";
 
 dotenv.config({
   path: "./env",
@@ -8,6 +9,7 @@ dotenv.config({
 
 ConnectDB()
   .then(() => {
+    // createInitialAdmin();
     server.listen(process.env.VITE_PORT || 8000, () => {
       console.log(
         `✅ Server is running at port : ${process.env.VITE_PORT || 8000}`
@@ -17,4 +19,3 @@ ConnectDB()
   .catch((error) => {
     console.log("❌ MongoDb connection Failed !!!", error);
   });
-  
