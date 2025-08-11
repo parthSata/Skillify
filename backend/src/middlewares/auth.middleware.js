@@ -27,3 +27,17 @@ export const verifyJWT = asyncHandler(async (req, _, next) => {
   req.user = user;
   next();
 });
+
+export const authorizeRoles = (allowedRoles) => {
+  return (req, res, next) => {
+    // Check if the user's role is in the list of allowed roles
+    if (!allowedRoles.includes(req.user.role)) {
+      throw new ApiError(
+        403,
+        `Forbidden: Role '${req.user.role}' is not authorized to access this resource.`
+      );
+    }
+    // If the user's role is allowed, proceed to the next middleware
+    next();
+  };
+};

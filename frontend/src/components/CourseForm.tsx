@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Video  } from 'lucide-react';
+import { Plus, Trash2, Video } from 'lucide-react';
 
 interface Lecture {
     id: string;
@@ -24,7 +24,7 @@ interface CourseFormProps {
     isEditing?: boolean;
 }
 
-export const CourseForm: React.FC<CourseFormProps> = ({
+const CourseForm: React.FC<CourseFormProps> = ({
     course,
     onSubmit,
     onCancel,
@@ -219,7 +219,7 @@ export const CourseForm: React.FC<CourseFormProps> = ({
 
                 {/* Existing Lectures */}
                 <div className="space-y-3">
-                    {formData.lectures.map((lecture, index) => (
+                    {formData.lectures.map((lecture) => (
                         <div key={lecture.id} className="flex items-center space-x-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
                             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
                                 <Video className="w-5 h-5 text-blue-600 dark:text-blue-400" />
@@ -261,3 +261,5 @@ export const CourseForm: React.FC<CourseFormProps> = ({
         </form>
     );
 };
+
+export default CourseForm;

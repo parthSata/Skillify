@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { BookOpen, Users, DollarSign, TrendingUp, Edit, Trash2, Tag } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { CourseForm } from '@/components/CourseForm';
-import { CategoryForm } from '@/components/CategoryForm';
+import { CourseForm, CategoryForm } from '@/components/index';
+
 import { useNavigate } from 'react-router-dom';
 
 interface AdminDashboardProps {

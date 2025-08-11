@@ -1,24 +1,26 @@
 // src/components/AdminNavigation.tsx
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { AdminDashboard } from '@/components/index';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { AdminCategoriesView, AdminCoursesView, AdminCreateCourseView, AdminDashboardView, AdminStudentsView, AdminTutorsView, } from '@/components/index';
 
 interface AdminNavigationProps {
   initialView?: string;
 }
 
-const AdminNavigation: React.FC<AdminNavigationProps> = ({ initialView = 'dashboard' }) => {
+const AdminNavigation: React.FC<AdminNavigationProps> = () => {
   return (
     <Routes>
-      <Route path="/" element={<AdminDashboard currentView={initialView} />} />
-      <Route path="dashboard" element={<AdminDashboard currentView="dashboard" />} />
-      <Route path="tutors" element={<AdminDashboard currentView="tutors" />} />
-      <Route path="students" element={<AdminDashboard currentView="students" />} />
-      <Route path="courses" element={<AdminDashboard currentView="courses" />} />
-      <Route path="categories" element={<AdminDashboard currentView="categories" />} />
-      <Route path="create-course" element={<AdminDashboard currentView="create-course" />} />
-      <Route path="analytics" element={<AdminDashboard currentView="analytics" />} />
+      <Route path="/" element={<Navigate to="dashboard" replace />} />
+      <Route path="dashboard" element={<AdminDashboardView />} />
+      <Route path="tutors" element={<AdminTutorsView />} />
+      <Route path="students" element={<AdminStudentsView />} />
+      <Route path="courses" element={<AdminCoursesView />} />
+      <Route path="categories" element={<AdminCategoriesView />} />
+      <Route path="create-course" element={<AdminCreateCourseView />} />
+      {/* Analytics route remains the same, you can add a dedicated component for it */}
+      <Route path="analytics" element={<div>Admin Analytics View</div>} />
+      <Route path="*" element={<div>404 Admin Page Not Found</div>} />
     </Routes>
   );
 };

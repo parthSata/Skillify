@@ -12,3 +12,11 @@ export { default as AdminNavigation } from "@/navigation/AdminNavigation";
 export { default as TutorNavigation } from "@/navigation/TutorNavigation";
 export { default as StudentNavigation } from "@/navigation/StudentNavigation";
 
+export { default as CategoryForm } from "@/components/CategoryForm";
+export { default as CourseForm } from "@/components/CourseForm";
+export { default as AdminDashboardView } from "@/pages/admin/AdminDashboardView";
+export { default as AdminCategoriesView } from "@/pages/admin/AdminCategoriesView";
+export { default as AdminCoursesView } from "@/pages/admin/AdminCoursesView";
+export { default as AdminCreateCourseView } from "@/pages/admin/AdminCreateCourseView";
+export { default as AdminTutorsView } from "@/pages/admin/AdminTutorsView";
+export { default as AdminStudentsView } from "@/pages/admin/AdminStudentsView";

@@ -14,7 +14,7 @@ interface CategoryFormProps {
     isEditing?: boolean;
 }
 
-export const CategoryForm: React.FC<CategoryFormProps> = ({
+const CategoryForm: React.FC<CategoryFormProps> = ({
     category,
     onSubmit,
     onCancel,
@@ -164,3 +164,5 @@ export const CategoryForm: React.FC<CategoryFormProps> = ({
         </form>
     );
 };
+
+export default CategoryForm;
