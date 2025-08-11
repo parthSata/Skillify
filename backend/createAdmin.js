@@ -6,16 +6,13 @@ dotenv.config();
 
 // Replace with your actual MongoDB URI
 const MONGODB_URI = process.env.VITE_MONGODB_URI;
-console.log("🚀 ~ MONGODB_URI:", MONGODB_URI);
 
 const createAdmin = async () => {
   try {
     await mongoose.connect(MONGODB_URI);
-    console.log("Connected to MongoDB");
 
     const existingAdmin = await User.findOne({ email: "Admin1709@gmail.com" });
     if (existingAdmin) {
-      console.log("Admin user already exists.");
       return;
     }
 
