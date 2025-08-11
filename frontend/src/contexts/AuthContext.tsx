@@ -48,7 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(true);
       const { data } = await axios.get<ApiResponse<User>>("http://localhost:3000/api/v1/users/me");
       if (data.success && data.data) {
-        console.log("🚀 ~ checkAuth ~ data:", data.message);
         // Corrected: Accessing user data from data.data
         const userData = data.data;
         if (userData && typeof userData._id === 'string' && typeof userData.email === 'string' && typeof userData.role === 'string') {
@@ -83,7 +82,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const handleAuthSuccess = (userData: User, navigate: any) => {
     setUser(userData);
-    console.log("🚀 ~ handleAuthSuccess ~ userData:", userData)
     const redirectPath =
       userData.role === 'admin'
         ? '/admin/dashboard'

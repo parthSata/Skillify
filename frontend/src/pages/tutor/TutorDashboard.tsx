@@ -1,4 +1,6 @@
-import React from 'react';
+// src/components/TutorDashboard.tsx
+
+import React, { useState } from 'react';
 import { BookOpen, Users, DollarSign, TrendingUp, Edit, Trash2, Tag } from 'lucide-react';
 import { Modal } from '@/components/Modal';
 import { CourseForm } from '@/components/CourseForm';
@@ -10,10 +12,10 @@ interface TutorDashboardProps {
 }
 
 const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
-  const [showCourseModal, setShowCourseModal] = React.useState(false);
-  const [showCategoryModal, setShowCategoryModal] = React.useState(false);
-  const [editingCourse, setEditingCourse] = React.useState<any>(null);
-  const [editingCategory, setEditingCategory] = React.useState<any>(null);
+  const [showCourseModal, setShowCourseModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
   const navigate = useNavigate();
 
   const tutorStats = [
@@ -80,31 +82,10 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
     setShowCategoryModal(true);
   };
 
-  const handleViewChange = (view: string) => {
-    navigate(`/tutor/${view}`);
-  };
-
   if (currentView === 'dashboard') {
     return (
       <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tutor Dashboard</h1>
-          <div className="space-x-2">
-            <button onClick={() => handleViewChange('courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              My Courses
-            </button>
-            <button onClick={() => handleViewChange('create-course')} className="px-4 py-2 bg-blue-600 text-white rounded">
-              Create Course
-            </button>
-            <button onClick={() => handleViewChange('categories')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Categories
-            </button>
-            <button onClick={() => handleViewChange('analytics')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Analytics
-            </button>
-          </div>
-        </div>
-
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Tutor Dashboard</h1>
         <div className="grid md:grid-cols-4 gap-6">
           {tutorStats.map((stat, index) => (
             <div key={index} className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300">
@@ -121,7 +102,6 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
             </div>
           ))}
         </div>
-
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">My Recent Courses</h3>
           <div className="space-y-4">
@@ -135,11 +115,10 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
                   </p>
                 </div>
                 <span
-                  className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    course.status === 'active'
-                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                  }`}
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${course.status === 'active'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                    }`}
                 >
                   {course.status}
                 </span>
@@ -154,24 +133,7 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
   if (currentView === 'courses') {
     return (
       <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Courses</h1>
-          <div className="space-x-2">
-            <button onClick={() => handleViewChange('dashboard')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Dashboard
-            </button>
-            <button onClick={() => handleViewChange('create-course')} className="px-4 py-2 bg-blue-600 text-white rounded">
-              Create Course
-            </button>
-            <button onClick={() => handleViewChange('categories')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Categories
-            </button>
-            <button onClick={() => handleViewChange('analytics')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Analytics
-            </button>
-          </div>
-        </div>
-
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">My Courses</h1>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {myCourses.map((course) => (
             <div key={course.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-300">
@@ -180,11 +142,10 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{course.title}</h3>
                   <span
-                    className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      course.status === 'active'
-                        ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                        : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                    }`}
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${course.status === 'active'
+                      ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                      : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                      }`}
                   >
                     {course.status}
                   </span>
@@ -210,7 +171,6 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
             </div>
           ))}
         </div>
-
         <Modal
           isOpen={showCourseModal}
           onClose={() => {
@@ -237,28 +197,11 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
   if (currentView === 'create-course') {
     return (
       <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create New Course</h1>
-          <div className="space-x-2">
-            <button onClick={() => handleViewChange('dashboard')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Dashboard
-            </button>
-            <button onClick={() => handleViewChange('courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              My Courses
-            </button>
-            <button onClick={() => handleViewChange('categories')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Categories
-            </button>
-            <button onClick={() => handleViewChange('analytics')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Analytics
-            </button>
-          </div>
-        </div>
-
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Course</h1>
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
           <CourseForm
             onSubmit={handleCourseSubmit}
-            onCancel={() => handleViewChange('courses')}
+            onCancel={() => navigate('/tutor/courses')}
             isEditing={false}
           />
         </div>
@@ -269,24 +212,7 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
   if (currentView === 'categories') {
     return (
       <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Categories</h1>
-          <div className="space-x-2">
-            <button onClick={() => handleViewChange('dashboard')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Dashboard
-            </button>
-            <button onClick={() => handleViewChange('courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              My Courses
-            </button>
-            <button onClick={() => handleViewChange('create-course')} className="px-4 py-2 bg-blue-600 text-white rounded">
-              Create Course
-            </button>
-            <button onClick={() => handleViewChange('analytics')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-              Analytics
-            </button>
-          </div>
-        </div>
-
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">My Categories</h1>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categories.map((category) => (
             <div key={category.id} className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 hover:shadow-lg transition-all duration-300">
@@ -315,7 +241,6 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
             </div>
           ))}
         </div>
-
         <Modal
           isOpen={showCategoryModal}
           onClose={() => {
@@ -341,23 +266,7 @@ const TutorDashboard: React.FC<TutorDashboardProps> = ({ currentView }) => {
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">{currentView.replace('-', ' ')}</h1>
-        <div className="space-x-2">
-          <button onClick={() => handleViewChange('dashboard')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-            Dashboard
-          </button>
-          <button onClick={() => handleViewChange('courses')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-            My Courses
-          </button>
-          <button onClick={() => handleViewChange('create-course')} className="px-4 py-2 bg-blue-600 text-white rounded">
-            Create Course
-          </button>
-          <button onClick={() => handleViewChange('categories')} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded">
-            Categories
-          </button>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white capitalize">{currentView.replace('-', ' ')}</h1>
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
         <p className="text-gray-600 dark:text-gray-400">
           {currentView === 'analytics' && 'Track your course performance, student engagement, and revenue analytics.'}

@@ -13,6 +13,8 @@ import {
   PageNotFound,
   Unauthorized,
 } from '@/components/index';
+import DashboardLayout from '@/components/DashboardLayout'; // Import the new layout component
+
 
 // You will need to create this component
 const PendingApproval = () => (
@@ -42,18 +44,42 @@ function App() {
             <Route path="/login" element={<Login onBack={() => navigate('/')} />} />
             <Route path="/register" element={<Register onBack={() => navigate('/')} />} />
             <Route path="/admin/login" element={<AdminLogin onBack={() => navigate('/')} />} />
-            <Route
+
+            <Route path="/admin/*" element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <DashboardLayout>
+                  <AdminNavigation initialView="dashboard" />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/student/*" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <DashboardLayout>
+                  <StudentNavigation initialView="dashboard" />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+            <Route path="/tutor/*" element={
+              <ProtectedRoute allowedRoles={['tutor']}>
+                <DashboardLayout>
+                  <TutorNavigation initialView="dashboard" />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } />
+
+            {/* <Route
               path="/admin/*"
               element={<ProtectedRoute allowedRoles={['admin']} children={<AdminNavigation initialView="dashboard" />} />}
-            />
-            <Route
+            /> */}
+            {/* <Route
               path="/student/*"
               element={<ProtectedRoute allowedRoles={['student']} children={<StudentNavigation initialView="dashboard" />} />}
             />
             <Route
               path="/tutor/*"
               element={<ProtectedRoute allowedRoles={['tutor']} children={<TutorNavigation initialView="dashboard" />} />}
-            />
+            /> */}
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="*" element={<PageNotFound />} />

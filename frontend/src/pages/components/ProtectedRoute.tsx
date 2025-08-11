@@ -10,7 +10,6 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ allowedRoles, children }: ProtectedRouteProps) => {
   const { user, loading } = useAuth();
-  console.log("🚀 ~ ProtectedRoute ~ user:", user)
   const location = useLocation();
 
   // Wait for the initial authentication check to complete.

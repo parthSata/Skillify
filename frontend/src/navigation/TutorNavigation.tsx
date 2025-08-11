@@ -1,3 +1,6 @@
+// src/components/TutorNavigation.tsx
+
+import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { TutorDashboard } from '@/components/index';
 
