@@ -9,7 +9,6 @@ interface ConfirmationDialogProps {
     onConfirm: () => void;
     onCancel: () => void;
 }
-
 export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ title, message, onConfirm, onCancel }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm  bg-opacity-50">
@@ -41,3 +40,4 @@ export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({ title, m
         </div>
     );
 };
+// export default ConfirmationDialog;

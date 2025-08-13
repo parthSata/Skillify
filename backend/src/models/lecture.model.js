@@ -6,7 +6,6 @@ const lectureSchema = new mongoose.Schema(
     videoUrl: { type: String, required: true },
     course: { type: mongoose.Schema.Types.ObjectId, ref: "Course" },
     duration: { type: String },
-    resources: [{ type: String }], // Optional files like PDF, DOC
   },
   { timestamps: true }
 );

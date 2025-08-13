@@ -1,41 +1,71 @@
 // src/components/AdminCoursesView.tsx
 
-import React, { useState } from 'react';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit, Trash2, Plus, Loader2 } from 'lucide-react';
 import { Modal } from '@/components/Modal';
-import { CourseForm } from '@/components';
+import { CourseForm, ConfirmationDialog } from '@/components/index';
+import axios from 'axios';
+import { toast } from 'react-hot-toast';
+
+interface Course {
+    _id: string;
+    title: string;
+    tutor: { name: string };
+    category: { name: string };
+    students: number;
+    revenue: string;
+    // status: string; // Removed as it is not in the schema
+    thumbnail: string;
+}
+
+interface ApiResponse<T> {
+    data: T;
+    message: string;
+    success: boolean;
+}
+
+axios.defaults.withCredentials = true;
+const API_BASE_URL = 'http://localhost:3000/api/v1';
 
 const AdminCoursesView: React.FC = () => {
+    const [courses, setCourses] = useState<Course[]>([]);
+    const [loading, setLoading] = useState(true);
     const [showCourseModal, setShowCourseModal] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [editingCourse, setEditingCourse] = useState<any>(null);
+    const [courseToDeleteId, setCourseToDeleteId] = useState<string | null>(null);
 
-    const courses = [
-        {
-            id: '1',
-            title: 'Complete React Development',
-            tutor: 'John Smith',
-            category: 'Web Development',
-            students: 234,
-            revenue: '$1,200',
-            status: 'active',
-            thumbnail: 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=300',
-        },
-        {
-            id: '2',
-            title: 'Python for Beginners',
-            tutor: 'Sarah Johnson',
-            category: 'Programming',
-            students: 456,
-            revenue: '$890',
-            status: 'pending',
-            thumbnail: 'https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=300',
-        },
-    ];
+    const fetchCourses = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get<ApiResponse<Course[]>>(`${API_BASE_URL}/courses`);
+            setCourses(response.data.data || []);
+        } catch (err: any) {
+            setCourses([]);
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    const handleCourseSubmit = (courseData: any) => {
-        console.log('Course submitted:', courseData);
-        setShowCourseModal(false);
-        setEditingCourse(null);
+    useEffect(() => {
+        fetchCourses();
+    }, []);
+
+    const handleCourseSubmit = async (courseData: FormData) => {
+        try {
+            if (editingCourse) {
+                await axios.patch(`${API_BASE_URL}/courses/${editingCourse._id}`, courseData);
+                toast.success('Course updated successfully!');
+            } else {
+                await axios.post(`${API_BASE_URL}/courses/create-course`, courseData);
+                toast.success('Course created successfully!');
+            }
+            setShowCourseModal(false);
+            setEditingCourse(null);
+            fetchCourses();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to save course.');
+        }
     };
 
     const handleEditCourse = (course: any) => {
@@ -43,12 +73,47 @@ const AdminCoursesView: React.FC = () => {
         setShowCourseModal(true);
     };
 
+    const handleDeleteClick = (courseId: string) => {
+        setCourseToDeleteId(courseId);
+        setShowDeleteDialog(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!courseToDeleteId) return;
+        try {
+            await axios.delete(`${API_BASE_URL}/courses/${courseToDeleteId}`);
+            toast.success('Course deleted successfully!');
+            fetchCourses();
+        } catch (err: any) {
+            toast.error(err.response?.data?.message || 'Failed to delete course.');
+        } finally {
+            setShowDeleteDialog(false);
+            setCourseToDeleteId(null);
+        }
+    };
+
+    const cancelDelete = () => {
+        setShowDeleteDialog(false);
+        setCourseToDeleteId(null);
+    };
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+            </div>
+        );
+    }
+
     return (
-        <div className="p-6">
+        <div className="p-6 bg-red">
             <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Course Management</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white dark:bg-red">Course Management</h1>
                 <button
-                    onClick={() => setShowCourseModal(true)}
+                    onClick={() => {
+                        setEditingCourse(null);
+                        setShowCourseModal(true);
+                    }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2"
                 >
                     <Plus className="w-5 h-5" />
@@ -63,43 +128,29 @@ const AdminCoursesView: React.FC = () => {
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Course</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tutor</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Students</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
                                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                            {courses.map((course) => (
-                                <tr key={course.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                            {courses?.map((course) => (
+                                <tr key={course._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <img src={course.thumbnail} alt={course.title} className="w-12 h-12 object-cover rounded-lg mr-4" />
                                             <div>
                                                 <div className="text-sm font-medium text-gray-900 dark:text-white">{course.title}</div>
-                                                <div className="text-sm text-gray-500 dark:text-gray-400">{course.revenue}</div>
+                                                <div className="text-sm text-gray-500 dark:text-gray-400">{course.students} students</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{course.tutor}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{course.category}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{course.students}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${course.status === 'active'
-                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                                : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                                            }`}>
-                                            {course.status}
-                                        </span>
-                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{course.tutor.name}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">{course.category.name}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <div className="flex items-center space-x-2">
-                                            <button
-                                                onClick={() => handleEditCourse(course)}
-                                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                                            >
+                                            <button onClick={() => handleEditCourse(course)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                                                 <Edit className="w-4 h-4" />
                                             </button>
-                                            <button className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
+                                            <button onClick={() => handleDeleteClick(course._id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
                                         </div>
@@ -110,25 +161,14 @@ const AdminCoursesView: React.FC = () => {
                     </table>
                 </div>
             </div>
-            <Modal
-                isOpen={showCourseModal}
-                onClose={() => {
-                    setShowCourseModal(false);
-                    setEditingCourse(null);
-                }}
-                title={editingCourse ? 'Edit Course' : 'Create New Course'}
-                size="xl"
-            >
-                <CourseForm
-                    course={editingCourse}
-                    onSubmit={handleCourseSubmit}
-                    onCancel={() => {
-                        setShowCourseModal(false);
-                        setEditingCourse(null);
-                    }}
-                    isEditing={!!editingCourse}
-                />
-            </Modal>
+            {showCourseModal && (
+                <Modal isOpen={showCourseModal} onClose={() => setShowCourseModal(false)} title={editingCourse ? 'Edit Course' : 'Create New Course'} size="xl">
+                    <CourseForm course={editingCourse} onSubmit={handleCourseSubmit} onCancel={() => setShowCourseModal(false)} isEditing={!!editingCourse} />
+                </Modal>
+            )}
+            {showDeleteDialog && (
+                <ConfirmationDialog title="Confirm Deletion" message="Are you sure you want to delete this course? This action cannot be undone." onConfirm={confirmDelete} onCancel={cancelDelete} />
+            )}
         </div>
     );
 };

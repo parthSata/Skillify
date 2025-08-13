@@ -1,8 +1,6 @@
-// src/routes/admin.routes.js
 
 import { Router } from "express";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
-import { authorizeRoles } from "../middlewares/auth.middleware.js";
+import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 import {
   getPendingTutors,
   getAllTutors,

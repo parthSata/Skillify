@@ -26,29 +26,30 @@ export const Modal: React.FC<ModalProps> = ({
     };
 
     return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-                <div
-                    className="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75 dark:bg-gray-900 dark:bg-opacity-75"
-                    onClick={onClose}
-                ></div>
-
-                <span className="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-
-                <div className={`inline-block w-full ${sizeClasses[size]} p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-2xl`}>
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                            {title}
-                        </h3>
-                        <button
-                            onClick={onClose}
-                            className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
-                    {children}
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto  bg-opacity-50">
+            <div
+                className="fixed inset-0 backdrop-blur-sm transition-opacity duration-300"
+                onClick={onClose}
+            ></div>
+            <div className={`
+                inline-block w-full ${sizeClasses[size]}
+                my-4 mx-4 sm:mx-6 md:mx-8 lg:mx-12 p-4 sm:p-6 md:p-8
+                overflow-y-auto max-h-[90vh] rounded-lg
+                bg-white dark:bg-gray-800 shadow-xl transform
+                transition-all duration-300 z-50
+            `}>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+                        {title}
+                    </h3>
+                    <button
+                        onClick={onClose}
+                        className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
                 </div>
+                {children}
             </div>
         </div>
     );
