@@ -14,7 +14,6 @@ interface Course {
     category: { name: string };
     students: number;
     revenue: string;
-    // status: string; // Removed as it is not in the schema
     thumbnail: string;
 }
 

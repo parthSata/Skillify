@@ -6,7 +6,8 @@ import { toast } from 'react-hot-toast';
 import axios from 'axios';
 
 interface Lecture {
-    id: string;
+    id: string; // Used for frontend state management
+    _id?: string; // The optional MongoDB ObjectId
     title: string;
     duration: string;
     videoUrl: string | null;
@@ -16,7 +17,7 @@ interface Lecture {
 
 interface CourseFormProps {
     course?: {
-        id?: string;
+        _id: string;
         title: string;
         description: string;
         category: string;
@@ -44,7 +45,6 @@ const CourseForm: React.FC<CourseFormProps> = ({
 }) => {
     const [categories, setCategories] = useState<Category[]>([]);
 
-    // Fetch categories on component mount
     useEffect(() => {
         const fetchCategories = async () => {
             try {
@@ -85,7 +85,8 @@ const CourseForm: React.FC<CourseFormProps> = ({
                 description: course.description,
                 category: course.category,
                 price: course.price,
-                lectures: course.lectures.map(l => ({ ...l, videoFile: null }))
+                // Refined mapping to ensure 'id' is always a string and 'videoFile' is null
+                lectures: course.lectures.map(l => ({ ...l, id: l._id || l.id, videoFile: null }))
             }));
         }
     }, [isEditing, course]);
@@ -146,7 +147,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
     const removeLecture = (lectureId: string) => {
         setFormData(prev => ({
             ...prev,
-            lectures: prev.lectures.filter(l => l.id !== lectureId)
+            lectures: prev.lectures.filter(l => (l.id || l._id) !== lectureId)
         }));
     };
 
@@ -167,8 +168,11 @@ const CourseForm: React.FC<CourseFormProps> = ({
             courseData.append(`lectures[${index}][title]`, lecture.title);
             courseData.append(`lectures[${index}][duration]`, lecture.duration);
             courseData.append(`lectures[${index}][description]`, lecture.description);
+
             if (lecture.videoFile) {
                 courseData.append(`lectures[${index}][video]`, lecture.videoFile);
+            } else if (isEditing && lecture._id) {
+                courseData.append(`lectures[${index}][id]`, lecture._id);
             }
         });
 
@@ -286,7 +290,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
                         <input
                             type="file"
                             name="videoFile"
-                            onChange={(e) => handleFileChange(e)}
+                            onChange={(e) => setNewLecture(prev => ({ ...prev, videoFile: e.target.files?.[0] || null }))}
                             className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-800 dark:text-white"
                             accept="video/*"
                         />
@@ -308,8 +312,9 @@ const CourseForm: React.FC<CourseFormProps> = ({
                     </button>
                 </div>
                 <div className="space-y-3">
-                    {formData.lectures.map((lecture) => (
-                        <div key={lecture.id} className="flex flex-col sm:flex-row items-center space-x-0 sm:space-x-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    {formData.lectures.map((lecture) => {
+                        console.log("🚀 ~ lecture:", lecture)
+                        return (<div key={lecture.id || lecture._id} className="flex flex-col sm:flex-row items-center space-x-0 sm:space-x-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
                             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg mb-2 sm:mb-0">
                                 <Video className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             </div>
@@ -319,15 +324,16 @@ const CourseForm: React.FC<CourseFormProps> = ({
                                     {lecture.duration} • {lecture.description || 'No description'}
                                 </p>
                             </div>
-                            <button
-                                type="button"
-                                onClick={() => removeLecture(lecture.id)}
-                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors mt-2 sm:mt-0"
-                            >
+                            <button type="button" onClick={() => {
+                                const idToRemove = lecture.id || lecture._id;
+                                if (idToRemove) {
+                                    removeLecture(idToRemove);
+                                }
+                            }} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors mt-2 sm:mt-0">
                                 <Trash2 className="w-4 h-4" />
                             </button>
-                        </div>
-                    ))}
+                        </div>);
+                    })}
                 </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end items-center sm:items-stretch space-y-2 sm:space-y-0 sm:space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
