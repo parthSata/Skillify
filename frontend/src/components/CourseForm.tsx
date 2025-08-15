@@ -85,7 +85,6 @@ const CourseForm: React.FC<CourseFormProps> = ({
                 description: course.description,
                 category: course.category,
                 price: course.price,
-                // Refined mapping to ensure 'id' is always a string and 'videoFile' is null
                 lectures: course.lectures.map(l => ({ ...l, id: l._id || l.id, videoFile: null }))
             }));
         }
@@ -128,7 +127,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
     };
 
     const addNewLecture = () => {
-        if (newLecture.title && newLecture.duration) {
+        if (newLecture.title && newLecture.duration && newLecture.videoFile) {
             const lecture: Lecture = {
                 id: Date.now().toString(),
                 ...newLecture,
@@ -140,7 +139,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
             }));
             setNewLecture({ title: '', duration: '', videoFile: null, description: '' });
         } else {
-            toast.error("Lecture title and duration are required.");
+            toast.error("Lecture title, duration, and video file are required.");
         }
     };
 
@@ -165,13 +164,17 @@ const CourseForm: React.FC<CourseFormProps> = ({
         }
 
         formData.lectures.forEach((lecture, index) => {
+            // Append text data with an index
             courseData.append(`lectures[${index}][title]`, lecture.title);
             courseData.append(`lectures[${index}][duration]`, lecture.duration);
             courseData.append(`lectures[${index}][description]`, lecture.description);
 
+            // Append the video file with the same, simple name "lectures".
+            // Multer will collect all of these into req.files.lectures.
             if (lecture.videoFile) {
-                courseData.append(`lectures[${index}][video]`, lecture.videoFile);
+                courseData.append('lectures', lecture.videoFile);
             } else if (isEditing && lecture._id) {
+                // For existing lectures without new files, just send the ID.
                 courseData.append(`lectures[${index}][id]`, lecture._id);
             }
         });
@@ -312,9 +315,8 @@ const CourseForm: React.FC<CourseFormProps> = ({
                     </button>
                 </div>
                 <div className="space-y-3">
-                    {formData.lectures.map((lecture) => {
-                        console.log("🚀 ~ lecture:", lecture)
-                        return (<div key={lecture.id || lecture._id} className="flex flex-col sm:flex-row items-center space-x-0 sm:space-x-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
+                    {formData.lectures.map((lecture) => (
+                        <div key={lecture.id || lecture._id} className="flex flex-col sm:flex-row items-center space-x-0 sm:space-x-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg">
                             <div className="p-2 bg-blue-100 dark:bg-blue-900/20 rounded-lg mb-2 sm:mb-0">
                                 <Video className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                             </div>
@@ -324,16 +326,20 @@ const CourseForm: React.FC<CourseFormProps> = ({
                                     {lecture.duration} • {lecture.description || 'No description'}
                                 </p>
                             </div>
-                            <button type="button" onClick={() => {
-                                const idToRemove = lecture.id || lecture._id;
-                                if (idToRemove) {
-                                    removeLecture(idToRemove);
-                                }
-                            }} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors mt-2 sm:mt-0">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const idToRemove = lecture.id || lecture._id;
+                                    if (idToRemove) {
+                                        removeLecture(idToRemove);
+                                    }
+                                }}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors mt-2 sm:mt-0"
+                            >
                                 <Trash2 className="w-4 h-4" />
                             </button>
-                        </div>);
-                    })}
+                        </div>
+                    ))}
                 </div>
             </div>
             <div className="flex flex-col sm:flex-row justify-end items-center sm:items-stretch space-y-2 sm:space-y-0 sm:space-x-4 pt-4 border-t border-gray-200 dark:border-gray-700">
