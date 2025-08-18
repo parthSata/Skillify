@@ -15,9 +15,8 @@ const processNewLectures = async (lectureFiles, lectureTextData) => {
   const lectureIds = [];
   if (!lectureFiles || lectureFiles.length === 0) {
     return [];
-  }
+  } // The frontend should send text data and files in the same order.
 
-  // The frontend should send text data and files in the same order.
   for (let i = 0; i < lectureFiles.length; i++) {
     const file = lectureFiles[i];
     const videoCloudinary = await uploadInCloudinary(file.path);
@@ -81,9 +80,8 @@ const createCourse = asyncHandler(async (req, res) => {
   const thumbnailCloudinary = await uploadInCloudinary(thumbnailLocalPath);
   if (!thumbnailCloudinary) {
     throw new ApiError(500, "Failed to upload thumbnail to Cloudinary.");
-  }
+  } // Use the new helper function
 
-  // Use the new helper function
   const newLectureIds = await processNewLectures(lectureFiles, lectureTextData);
 
   const newCourse = await Course.create({
@@ -113,7 +111,7 @@ const createCourse = asyncHandler(async (req, res) => {
     .json(new ApiResponse(201, newCourse, "Course created successfully."));
 });
 
-// GET ALL COURSES (unchanged)
+// ADMIN: GET ALL COURSES
 const getAllCourses = asyncHandler(async (req, res) => {
   const courses = await Course.find()
     .populate("category", "name")
@@ -123,6 +121,53 @@ const getAllCourses = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, courses, "All courses fetched successfully."));
+});
+
+// TUTOR: GET ALL COURSES ADDED BY THEMSELVES
+const getAllTutorCourses = asyncHandler(async (req, res) => {
+  const tutorId = req.user._id;
+
+  const courses = await Course.find({ tutor: tutorId })
+    .populate("category", "name")
+    .populate("tutor", "name")
+    .populate("lectures", "title duration description videoUrl");
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, courses, "Tutor's courses fetched successfully.")
+    );
+});
+
+// NEW: TOGGLE COURSE STATUS
+const toggleCourseStatus = asyncHandler(async (req, res) => {
+  const { courseId } = req.params;
+  const { isApproved } = req.body;
+  const tutorId = req.user._id;
+
+  if (typeof isApproved !== "boolean") {
+    throw new ApiError(
+      400,
+      "Invalid status provided. 'isApproved' must be a boolean."
+    );
+  }
+
+  const course = await Course.findOneAndUpdate(
+    { _id: courseId, tutor: tutorId }, // Find by courseId AND tutorId to ensure ownership
+    { $set: { isApproved: isApproved } },
+    { new: true }
+  );
+
+  if (!course) {
+    throw new ApiError(
+      404,
+      "Course not found or you are not authorized to update this course."
+    );
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, course, "Course status updated successfully."));
 });
 
 // UPDATE COURSE - Refactored for a clearer and more robust logic
@@ -138,9 +183,8 @@ const updateCourse = asyncHandler(async (req, res) => {
   const courseToUpdate = await Course.findById(courseId).populate("lectures");
   if (!courseToUpdate) {
     throw new ApiError(404, "Course not found.");
-  }
+  } // Handle thumbnail update if a new one is provided
 
-  // Handle thumbnail update if a new one is provided
   let thumbnailCloudinaryUrl = courseToUpdate.thumbnail;
   const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
   if (thumbnailLocalPath) {
@@ -149,24 +193,20 @@ const updateCourse = asyncHandler(async (req, res) => {
       throw new ApiError(500, "Failed to upload new thumbnail.");
     }
     thumbnailCloudinaryUrl = uploadResult.url;
-  }
+  } // Parse incoming lecture data and files
 
-  // Parse incoming lecture data and files
   const incomingLectures = req.body.lectures || [];
-  const newLecturesTextData = incomingLectures.filter((l) => !l.id);
+  const newLecturesTextData = incomingLectures.filter((l) => !l.id); // Process only the new lecture files with their corresponding text data
 
-  // Process only the new lecture files with their corresponding text data
   const newLectureIds = await processNewLectures(
     lectureFiles,
     newLecturesTextData
-  );
+  ); // Get IDs of existing lectures from the request
 
-  // Get IDs of existing lectures from the request
   const existingLectureIds = incomingLectures
     .filter((l) => l.id)
-    .map((l) => new mongoose.Types.ObjectId(l.id));
+    .map((l) => new mongoose.Types.ObjectId(l.id)); // Identify and delete old lectures that are not in the incoming request
 
-  // Identify and delete old lectures that are not in the incoming request
   const lecturesToDelete = courseToUpdate.lectures
     .filter(
       (lecture) => !existingLectureIds.some((id) => id.equals(lecture._id))
@@ -175,12 +215,10 @@ const updateCourse = asyncHandler(async (req, res) => {
 
   if (lecturesToDelete.length > 0) {
     await Lecture.deleteMany({ _id: { $in: lecturesToDelete } });
-  }
+  } // Combine all lecture IDs for the update
 
-  // Combine all lecture IDs for the update
-  const updatedLectureIds = [...existingLectureIds, ...newLectureIds];
+  const updatedLectureIds = [...existingLectureIds, ...newLectureIds]; // Check if the category is valid before updating
 
-  // Check if the category is valid before updating
   const categoryDocument = await Category.findById(category);
   if (!categoryDocument) {
     if (thumbnailLocalPath && fs.existsSync(thumbnailLocalPath))
@@ -203,9 +241,8 @@ const updateCourse = asyncHandler(async (req, res) => {
 
   if (!updatedCourse) {
     throw new ApiError(500, "Failed to update the course.");
-  }
+  } // Link new lectures to the updated course
 
-  // Link new lectures to the updated course
   if (newLectureIds.length > 0) {
     await Lecture.updateMany(
       { _id: { $in: newLectureIds } },
@@ -239,4 +276,29 @@ const deleteCourse = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Course deleted successfully."));
 });
 
-export { createCourse, getAllCourses, updateCourse, deleteCourse };
+// GET A SINGLE COURSE BY ID
+const getCourseById = asyncHandler(async (req, res) => {
+  const { courseId } = req.params;
+  const course = await Course.findById(courseId)
+    .populate("category", "name")
+    .populate("tutor", "name")
+    .populate("lectures", "title duration description videoUrl");
+
+  if (!course) {
+    throw new ApiError(404, "Course not found.");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, course, "Course fetched successfully."));
+});
+
+export {
+  createCourse,
+  getAllCourses,
+  getAllTutorCourses,
+  updateCourse,
+  deleteCourse,
+  getCourseById,
+  toggleCourseStatus,
+};

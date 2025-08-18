@@ -164,7 +164,7 @@ const AdminCoursesView: React.FC = () => {
                 <Modal isOpen={showCourseModal} onClose={() => setShowCourseModal(false)} title={editingCourse ? 'Edit Course' : 'Create New Course'} size="xl">
                     <CourseForm course={editingCourse} onSubmit={handleCourseSubmit} onCancel={() => setShowCourseModal(false)} isEditing={!!editingCourse} />
                 </Modal>
-            )}
+            )}c
             {showDeleteDialog && (
                 <ConfirmationDialog title="Confirm Deletion" message="Are you sure you want to delete this course? This action cannot be undone." onConfirm={confirmDelete} onCancel={cancelDelete} />
             )}

@@ -13,8 +13,7 @@ import {
   PageNotFound,
   Unauthorized,
 } from '@/components/index';
-import DashboardLayout from '@/components/DashboardLayout'; // Import the new layout component
-
+import DashboardLayout from '@/components/DashboardLayout';
 
 // You will need to create this component
 const PendingApproval = () => (
@@ -48,7 +47,7 @@ function App() {
             <Route path="/admin/*" element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <DashboardLayout>
-                  <AdminNavigation initialView="dashboard" />
+                  <AdminNavigation />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
@@ -56,30 +55,17 @@ function App() {
             <Route path="/student/*" element={
               <ProtectedRoute allowedRoles={['student']}>
                 <DashboardLayout>
-                  <StudentNavigation initialView="dashboard" />
+                  <StudentNavigation />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
             <Route path="/tutor/*" element={
               <ProtectedRoute allowedRoles={['tutor']}>
                 <DashboardLayout>
-                  <TutorNavigation initialView="dashboard" />
+                  <TutorNavigation />
                 </DashboardLayout>
               </ProtectedRoute>
             } />
-
-            {/* <Route
-              path="/admin/*"
-              element={<ProtectedRoute allowedRoles={['admin']} children={<AdminNavigation initialView="dashboard" />} />}
-            /> */}
-            {/* <Route
-              path="/student/*"
-              element={<ProtectedRoute allowedRoles={['student']} children={<StudentNavigation initialView="dashboard" />} />}
-            />
-            <Route
-              path="/tutor/*"
-              element={<ProtectedRoute allowedRoles={['tutor']} children={<TutorNavigation initialView="dashboard" />} />}
-            /> */}
             <Route path="/unauthorized" element={<Unauthorized />} />
             <Route path="/pending-approval" element={<PendingApproval />} />
             <Route path="*" element={<PageNotFound />} />

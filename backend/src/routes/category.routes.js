@@ -1,3 +1,5 @@
+// src/routes/category.routes.js
+
 import { Router } from "express";
 import {
   createCategory,
@@ -7,10 +9,11 @@ import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// Protect all category routes with Admin authorization
-router.use(verifyJWT, authorizeRoles(["admin"]));
+// Route to get all categories (public, no authentication required)
+router.route("/").get(getAllCategories);
 
-// CRUD operations for categories
-router.route("/").post(createCategory).get(getAllCategories);
+// Route to create a new category (protected, requires admin role)
+router.use(verifyJWT, authorizeRoles(["admin"]));
+router.route("/").post(createCategory);
 
 export default router;

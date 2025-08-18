@@ -13,7 +13,7 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
 
 // Protect all course routes with Admin authorization
-router.use(verifyJWT, authorizeRoles(["admin", "tutor"]));
+router.use(verifyJWT, authorizeRoles(["admin"]));
 
 // Use different endpoints for clarity and to prevent conflicts
 router.route("/create-course").post(
