@@ -174,4 +174,39 @@ const refreshToken = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, loginUser, logoutUser, getCurrentUser, refreshToken };
+const getEnrolledCourses = asyncHandler(async (req, res) => {
+  const studentId = req.user._id;
+
+  // Find the student and populate their enrolled courses
+  const student = await User.findById(studentId).populate({
+    path: "enrolledCourses",
+    model: "Course",
+    populate: {
+      path: "tutor",
+      select: "name", // Only fetch the tutor's name
+    },
+  });
+
+  if (!student) {
+    throw new ApiError(404, "Student not found.");
+  }
+
+  res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        student.enrolledCourses,
+        "Enrolled courses fetched successfully."
+      )
+    );
+});
+
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  getCurrentUser,
+  refreshToken,
+  getEnrolledCourses,
+};

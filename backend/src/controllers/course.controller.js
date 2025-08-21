@@ -45,6 +45,26 @@ const processNewLectures = async (lectureFiles, lectureTextData) => {
   return lectureIds;
 };
 
+// PUBLIC: GET ALL APPROVED COURSES
+const getAllApprovedCourses = asyncHandler(async (req, res) => {
+  const courses = await Course.find({ isApproved: true }) // Only fetch approved courses
+    .populate("category", "name")
+    .populate("tutor", "name")
+    .populate("lectures", "title duration description videoUrl");
+
+  if (!courses || courses.length === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "No approved courses found."));
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, courses, "Approved courses fetched successfully.")
+    );
+});
+
 // CREATE COURSE
 const createCourse = asyncHandler(async (req, res) => {
   const { title, description, category, price } = req.body;
@@ -301,4 +321,5 @@ export {
   deleteCourse,
   getCourseById,
   toggleCourseStatus,
+  getAllApprovedCourses,
 };

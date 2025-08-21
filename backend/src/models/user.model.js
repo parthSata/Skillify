@@ -11,6 +11,12 @@ const userSchema = new mongoose.Schema(
     avatar: { type: String },
     isApproved: { type: Boolean, default: false },
     refreshToken: { type: String },
+    enrolledCourses: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course",
+      },
+    ],
   },
   { timestamps: true }
 );

@@ -7,7 +7,11 @@ import adminRouter from "./routes/admin.routes.js"; // Import new admin routes
 import courseRouter from "./routes/course.routes.js"; // Import new course routes
 import categoryRouter from "./routes/category.routes.js"; // Import new category routes
 import tutorCourseRouter from "./routes/tutor.course.routes.js"; // Import new tutor course routes
+import paymentRouter from "./routes/payment.routes.js"; // Import the new payment router
+import studentRouter from "./routes/student.routes.js"; // Import student routes
 import { ApiError } from "./utils/ApiError.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -29,6 +33,8 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/student", studentRouter);
+
 // Admin routes
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/courses", courseRouter);
@@ -36,6 +42,8 @@ app.use("/api/v1/categories", categoryRouter);
 
 // Tutor routes
 app.use("/api/v1/tutor/courses", tutorCourseRouter); // Add the new tutor course route
+
+app.use("/api/v1/payments", paymentRouter); // Register the new payment router
 
 // Error handling middleware
 app.use((err, req, res, next) => {

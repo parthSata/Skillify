@@ -1,75 +1,69 @@
-import React from 'react';
-import { Star, Clock, Users, Play } from 'lucide-react';
+// frontend/src/components/CourseCard.tsx
 
-interface CourseCardProps {
-    course: {
-        id: string;
-        title: string;
-        description: string;
-        thumbnail: string;
-        tutor: string;
-        price: number;
-        rating: number;
-        students: number;
-        duration: string;
-        category: string;
+import React from 'react';
+
+interface Course {
+    _id: string; // Changed to _id to match backend
+    title: string;
+    description: string;
+    thumbnail: string;
+    // Corrected tutor type
+    tutor: {
+        _id: string;
+        name: string;
     };
-    onCourseClick: (courseId: string) => void;
+    price: number;
+    rating: number;
+    students: number;
+    duration: string;
+    category: string;
+    lectures?: any[];
 }
 
-export const CourseCard: React.FC<CourseCardProps> = ({ course, onCourseClick }) => {
+interface CourseCardProps {
+    course: Course;
+    onCourseClick: (id: string) => void;
+}
+
+const CourseCard: React.FC<CourseCardProps> = ({ course, onCourseClick }) => {
     return (
         <div
-            onClick={() => onCourseClick(course.id)}
-            className="group bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden transform hover:-translate-y-1"
+            onClick={() => onCourseClick(course._id)} // Use _id here
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-lg cursor-pointer"
         >
-            <div className="relative overflow-hidden">
+            <div className="relative">
                 <img
                     src={course.thumbnail}
                     alt={course.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="w-full h-48 object-cover"
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
-                    <Play className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </div>
-                <div className="absolute top-3 right-3 bg-blue-600 text-white px-2 py-1 rounded-full text-sm font-medium">
-                    {course.category}
-                </div>
-            </div>
-
-            <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {course.title}
-                </h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
-                    {course.description}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">by {course.tutor}</p>
-
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center space-x-4">
-                        <div className="flex items-center space-x-1">
-                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{course.rating}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                            <Users className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{course.students}</span>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                            <Clock className="w-4 h-4 text-gray-400" />
-                            <span className="text-sm text-gray-600 dark:text-gray-400">{course.duration}</span>
-                        </div>
+                {course.category && (
+                    <div className="absolute top-2 right-2 bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">
+                        {course.category}
                     </div>
+                )}
+            </div>
+            <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white truncate">{course.title}</h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 line-clamp-2">{course.description}</p>
+                <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.518-1.812a1 1 0 00-1.202 0l-2.518 1.812c-.785.57-1.83-.197-1.539-1.118l1.07-3.292a1 1 0 00-.363-1.118l-2.8-2.034c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.95-.69l1.07-3.292z" />
+                        </svg>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{course.rating}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">({course.students}+)</span>
+                    </div>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">₹{course.price}</span>
                 </div>
-
-                <div className="flex items-center justify-between">
-                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">${course.price}</span>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200">
-                        Enroll Now
-                    </button>
+                <div className="mt-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
+                    <span>{course.duration}</span>
+                    {course.lectures && <span>{course.lectures.length} Lectures</span>}
                 </div>
+                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Tutor: {course.tutor.name}</p>
             </div>
         </div>
     );
 };
+
+export default CourseCard;

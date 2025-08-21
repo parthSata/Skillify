@@ -6,6 +6,8 @@ import {
   getAllCourses,
   updateCourse,
   deleteCourse,
+  getAllApprovedCourses, // Import the new controller function
+  getCourseById, // This is already created, but we will make a public route for it
 } from "../controllers/course.controller.js";
 import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -13,7 +15,13 @@ import { upload } from "../middlewares/multer.middleware.js";
 const router = Router();
 
 // Protect all course routes with Admin authorization
-router.use(verifyJWT, authorizeRoles(["admin"]));
+router.use(verifyJWT, authorizeRoles(["admin", "student"]));
+
+// Get all approved courses (for students)
+router.route("/all").get(getAllApprovedCourses);
+
+// Get a single course by ID (for students)
+router.route("/:courseId").get(getCourseById);
 
 // Use different endpoints for clarity and to prevent conflicts
 router.route("/create-course").post(

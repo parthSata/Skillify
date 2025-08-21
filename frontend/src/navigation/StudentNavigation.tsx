@@ -1,21 +1,19 @@
 // src/components/StudentNavigation.tsx
 
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { StudentDashboard } from '@/components/index';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { StudentDashboardHome, StudentBrowseCourses, StudentMyCourses, StudentProgress, StudentCourseDetails, PageNotFound } from '@/components/index';
 
-interface StudentNavigationProps {
-  initialView?: string;
-}
-
-const StudentNavigation: React.FC<StudentNavigationProps> = ({ initialView = 'dashboard' }) => {
+const StudentNavigation: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<StudentDashboard currentView={initialView} />} />
-      <Route path="dashboard" element={<StudentDashboard currentView="dashboard" />} />
-      <Route path="browse" element={<StudentDashboard currentView="browse" />} />
-      <Route path="my-courses" element={<StudentDashboard currentView="my-courses" />} />
-      <Route path="progress" element={<StudentDashboard currentView="progress" />} />
+      <Route path="/" element={<Navigate to="dashboard" replace />} />
+      <Route path="dashboard" element={<StudentDashboardHome />} />
+      <Route path="browse" element={<StudentBrowseCourses />} />
+      <Route path="my-courses" element={<StudentMyCourses />} />
+      <Route path="progress" element={<StudentProgress />} />
+      <Route path="course-details/:courseId" element={<StudentCourseDetails />} />
+      <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
 };

@@ -3,7 +3,6 @@ export { default as Login } from "@/pages/shared/Login";
 export { default as Register } from "@/pages/shared/Register";
 export { default as AdminLogin } from "@/pages/admin/AdminLogin";
 export { default as TutorDashboardView } from "@/pages/tutor/TutorDashboardView";
-export { default as StudentDashboard } from "@/components/StudentDashboard";
 export { default as ProtectedRoute } from "@/pages/components/ProtectedRoute";
 export { default as PageNotFound } from "@/pages/components/PageNotFound";
 export { default as Unauthorized } from "@/pages/components/Unauthorized";
@@ -28,4 +27,11 @@ export { default as TutorCoursesView } from "@/pages/tutor/TutorCoursesView";
 export { default as TutorCreateCourseView } from "@/pages/tutor/TutorCreateCourseView";
 export { default as TutorAnalyticsView } from "@/pages/tutor/TutorAnalyticsView";
 export { default as TutorCoursesTable } from "@/pages/tutor/TutorCoursesTable";
+
+export { default as StudentDashboardHome } from "@/pages/student/StudentDashboardHome";
+export { default as StudentBrowseCourses } from "@/pages/student/StudentBrowseCourses";
+export { default as StudentMyCourses } from "@/pages/student/StudentMyCourses";
+export { default as StudentProgress } from "@/pages/student/StudentProgress";
+export { default as StudentCourseDetails } from "@/pages/student/StudentCourseDetails";
+export { default as CourseCard } from "@/components/CourseCard";
 
