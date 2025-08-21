@@ -187,7 +187,7 @@ const StudentCourseDetails: React.FC = () => {
                                 className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
                             >
                                 <DollarSign className="w-5 h-5" />
-                                <span>Buy Now for ${course.price}</span>
+                                <span>Buy Now for {course.price}</span>
                             </button>
                         </div>
                     ) : (
