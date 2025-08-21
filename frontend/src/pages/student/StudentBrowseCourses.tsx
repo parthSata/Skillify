@@ -1,3 +1,5 @@
+// src/pages/student/StudentBrowseCourses.tsx
+
 import React, { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { CourseCard } from '@/components/index';
@@ -13,28 +15,31 @@ interface API_Course {
   title: string;
   description: string;
   thumbnail: string;
-  tutor: { name: string };
+  tutor: { _id: string; name: string }; // Corrected: Tutor now has _id
   price: number;
   rating: number;
   students: number;
   category: { name: string; _id: string };
   duration: string;
-  lectures: any[]; // Ensure lectures are included in the API response type
+  lectures: any[];
 }
 
 // Interface for the data used by the CourseCard component
 interface Course {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   thumbnail: string;
-  tutor: string;
+  tutor: {
+    _id: string;
+    name: string;
+  };
   price: number;
   rating: number;
   students: number;
   duration: string;
   category: string;
-  lectures: any[]; // The CourseCard now expects this
+  lectures: any[];
 }
 
 interface Category {
@@ -66,17 +71,17 @@ const StudentBrowseCourses: React.FC = () => {
 
         if (coursesResponse.data.success && categoriesResponse.data.success) {
           const formattedCourses: Course[] = coursesResponse.data.data.map(apiCourse => ({
-            id: apiCourse._id,
+            _id: apiCourse._id,
             title: apiCourse.title,
             description: apiCourse.description,
             thumbnail: apiCourse.thumbnail,
-            tutor: apiCourse.tutor.name,
+            tutor: apiCourse.tutor,
             price: apiCourse.price,
             rating: apiCourse.rating,
             students: apiCourse.students,
             duration: apiCourse.duration,
             category: apiCourse.category.name,
-            lectures: apiCourse.lectures || [], // Ensure lectures array exists
+            lectures: apiCourse.lectures || [],
           }));
 
           setCourses(formattedCourses);
@@ -94,8 +99,8 @@ const StudentBrowseCourses: React.FC = () => {
     fetchAllData();
   }, []);
 
-  const handleCourseClick = (courseId: string) => {
-    navigate(`/student/course-details/${courseId}`);
+  const handleCourseClick = (_id: string) => {
+    navigate(`/student/course-details/${_id}`);
   };
 
   const filteredCourses = courses.filter(course => {
@@ -149,9 +154,9 @@ const StudentBrowseCourses: React.FC = () => {
         {filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
             <CourseCard
-              key={course.id}
+              key={course._id}
               course={course}
-              onCourseClick={() => handleCourseClick(course.id)}
+              onCourseClick={() => handleCourseClick(course._id)}
             />
           ))
         ) : (

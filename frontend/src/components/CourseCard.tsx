@@ -3,11 +3,10 @@
 import React from 'react';
 
 interface Course {
-    _id: string; // Changed to _id to match backend
+    _id: string;
     title: string;
     description: string;
     thumbnail: string;
-    // Corrected tutor type
     tutor: {
         _id: string;
         name: string;
@@ -28,7 +27,7 @@ interface CourseCardProps {
 const CourseCard: React.FC<CourseCardProps> = ({ course, onCourseClick }) => {
     return (
         <div
-            onClick={() => onCourseClick(course._id)} // Use _id here
+            onClick={() => onCourseClick(course._id)}
             className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden transition-shadow hover:shadow-lg cursor-pointer"
         >
             <div className="relative">

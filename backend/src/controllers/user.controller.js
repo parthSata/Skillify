@@ -202,7 +202,25 @@ const getEnrolledCourses = asyncHandler(async (req, res) => {
     );
 });
 
+const checkEnrollmentStatus = asyncHandler(async (req, res) => {
+  const { courseId } = req.params;
+  const student = req.user;
+
+  const isEnrolled = student.enrolledCourses.includes(courseId);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { isEnrolled },
+        "Enrollment status fetched successfully."
+      )
+    );
+});
+
 export {
+  checkEnrollmentStatus,
   registerUser,
   loginUser,
   logoutUser,

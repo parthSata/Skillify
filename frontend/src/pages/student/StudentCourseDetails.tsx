@@ -57,21 +57,23 @@ const StudentCourseDetails: React.FC = () => {
 
         try {
             setLoading(true);
-            const response = await axios.get<APIResponse<CourseDetails>>(`${API_BASE_URL}/courses/${courseId}`);
+            const courseResponse = await axios.get<APIResponse<CourseDetails>>(`${API_BASE_URL}/courses/${courseId}`);
 
-            if (response.data.success) {
+            if (courseResponse.data.success) {
                 const fetchedCourse = {
-                    ...response.data.data,
+                    ...courseResponse.data.data,
                     rating: 4.8,
                     students: 1250,
                 };
                 setCourse(fetchedCourse);
 
-                // Check enrollment status (you'll need a backend endpoint for this)
-                // For now, it's mocked as false
-                setIsEnrolled(false);
+                // New: Check enrollment status
+                const enrollmentResponse = await axios.get<APIResponse<{ isEnrolled: boolean }>>(`${API_BASE_URL}/student/enrollment-status/${courseId}`);
+                if (enrollmentResponse.data.success) {
+                    setIsEnrolled(enrollmentResponse.data.data.isEnrolled);
+                }
             } else {
-                toast.error(response.data.message || 'Failed to fetch course details.');
+                toast.error(courseResponse.data.message || 'Failed to fetch course details.');
             }
         } catch (err: any) {
             console.error('Failed to fetch course details:', err);
@@ -87,15 +89,13 @@ const StudentCourseDetails: React.FC = () => {
 
     const handleEnrollment = async () => {
         if (!course || !course._id) return;
-        console.log(`Razorpay Key ID: ${import.meta.env.VITE_RAZORPAY_KEY_ID}`);
 
         try {
             const orderResponse = await axios.post<APIResponse<any>>(`${API_BASE_URL}/payments/razorpay/order/${course._id}`);
-            console.log("🚀 ~ handleEnrollment ~ orderResponse:", orderResponse)
             const order = orderResponse.data.data;
 
             const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID, // Corrected to use VITE_ prefix
+                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
                 amount: order.amount,
                 currency: order.currency,
                 name: "Skillify Course Enrollment",
@@ -112,7 +112,7 @@ const StudentCourseDetails: React.FC = () => {
 
                         if (verifyResponse.data.success) {
                             toast.success("Enrollment successful!");
-                            setIsEnrolled(true);
+                            setIsEnrolled(true); // Update state on success
                         } else {
                             toast.error(verifyResponse.data.message || "Payment verification failed.");
                         }
