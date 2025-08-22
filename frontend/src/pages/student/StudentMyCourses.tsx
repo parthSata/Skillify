@@ -1,20 +1,17 @@
-// src/pages/StudentMyCourses.tsx
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { CourseCard } from '@/components/index';
-import { useNavigate } from 'react-router-dom';
+import { CourseCard, CourseDetailModal } from '@/components/index';
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
 // Define data interfaces
 interface Course {
-    _id: string; // Changed from 'id' to '_id'
+    _id: string;
     title: string;
     description: string;
     thumbnail: string;
-    tutor: { // Updated to be an object to match populated data
+    tutor: {
         _id: string;
         name: string;
     };
@@ -22,8 +19,9 @@ interface Course {
     rating: number;
     students: number;
     duration: string;
-    category: string;
+    category: string; // Ensure this is a string to match the updated UI logic
     lectures: any[];
+    isEnrolled?: boolean;
 }
 
 interface APIResponse<T> {
@@ -36,32 +34,74 @@ const StudentMyCourses: React.FC = () => {
     const [enrolledCourses, setEnrolledCourses] = useState<Course[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const navigate = useNavigate();
+
+    // Modal State
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
+    const fetchEnrolledCourses = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get<APIResponse<Course[]>>(`${API_BASE_URL}/student/my-courses`);
+
+            if (response.data.success) {
+                // Ensure the category is a string if it comes as an object from the API
+                const formattedCourses = response.data.data.map(course => ({
+                    ...course,
+                    category: (course.category as any)?.name || course.category,
+                }));
+                setEnrolledCourses(formattedCourses);
+            } else {
+                setError('Failed to fetch enrolled courses.');
+            }
+        } catch (err: any) {
+            setError(err.response?.data?.message || 'Failed to fetch enrolled courses.');
+            toast.error(err.response?.data?.message || 'Failed to fetch enrolled courses.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchEnrolledCourses = async () => {
-            try {
-                setLoading(true);
-                const response = await axios.get<APIResponse<Course[]>>(`${API_BASE_URL}/student/my-courses`);
-
-                if (response.data.success) {
-                    setEnrolledCourses(response.data.data);
-                } else {
-                    setError('Failed to fetch enrolled courses.');
-                }
-            } catch (err: any) {
-                setError(err.response?.data?.message || 'Failed to fetch enrolled courses.');
-                toast.error(err.response?.data?.message || 'Failed to fetch enrolled courses.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchEnrolledCourses();
     }, []);
 
-    const handleCourseClick = (courseId: string) => {
-        navigate(`/student/course-details/${courseId}`);
+    const openCourseModal = async (_id: string) => {
+        try {
+            const courseResponse = await axios.get<APIResponse<Course>>(`${API_BASE_URL}/courses/${_id}`);
+            if (courseResponse.data.success) {
+                const formattedCourse = {
+                    ...courseResponse.data.data,
+                    isEnrolled: true,
+                    // Ensure tutor is a string for the modal
+                    tutor: (courseResponse.data.data.tutor as any).name,
+                    // Map _id to id for lectures
+                    lectures: (courseResponse.data.data.lectures as any[]).map(l => ({
+                        ...l,
+                        id: l._id,
+                        isLocked: false,
+                        isCompleted: false
+                    })),
+                };
+                setSelectedCourse(formattedCourse as any);
+                setIsModalOpen(true);
+            } else {
+                toast.error("Failed to load course details for modal.");
+            }
+        } catch (err) {
+            toast.error("An error occurred while fetching course details.");
+            console.error(err);
+        }
+    };
+
+    const closeCourseModal = () => {
+        setIsModalOpen(false);
+        setSelectedCourse(null);
+    };
+
+    // A dummy function for the onEnroll prop since these courses are already enrolled
+    const noopEnroll = () => {
+        toast.error("You are already enrolled in this course.");
     };
 
     if (loading) {
@@ -79,9 +119,9 @@ const StudentMyCourses: React.FC = () => {
                 {enrolledCourses.length > 0 ? (
                     enrolledCourses.map((course) => (
                         <CourseCard
-                            key={course._id} // Fixed to use _id
+                            key={course._id}
                             course={course}
-                            onCourseClick={() => handleCourseClick(course._id)}
+                            onCourseClick={() => openCourseModal(course._id)}
                         />
                     ))
                 ) : (
@@ -91,6 +131,28 @@ const StudentMyCourses: React.FC = () => {
                     </div>
                 )}
             </div>
+
+            {selectedCourse && (
+                <CourseDetailModal
+                    isOpen={isModalOpen}
+                    onClose={closeCourseModal}
+                    course={{
+                        id: selectedCourse._id,
+                        title: selectedCourse.title,
+                        description: selectedCourse.description,
+                        thumbnail: selectedCourse.thumbnail,
+                        tutor: selectedCourse.tutor.name, // <-- FIX: Access the name property
+                        price: selectedCourse.price,
+                        rating: selectedCourse.rating,
+                        students: selectedCourse.students,
+                        duration: selectedCourse.duration,
+                        category: selectedCourse.category,
+                        lectures: selectedCourse.lectures.map(l => ({ ...l, id: l._id, isLocked: false, isCompleted: false })),
+                        isEnrolled: true,
+                    }}
+                    onEnroll={noopEnroll} // Pass the dummy function to satisfy the prop requirement
+                />
+            )}
         </div>
     );
 };

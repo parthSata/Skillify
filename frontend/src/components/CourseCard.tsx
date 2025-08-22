@@ -1,4 +1,4 @@
-// frontend/src/components/CourseCard.tsx
+// src/components/CourseCard.tsx
 
 import React from 'react';
 
@@ -15,7 +15,7 @@ interface Course {
     rating: number;
     students: number;
     duration: string;
-    category: string;
+    category: string; // Updated to expect a string
     lectures?: any[];
 }
 

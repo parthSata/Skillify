@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
-import { PlayCircle, Award, DollarSign, Users } from 'lucide-react';
+import { CourseCard, CourseDetailModal } from '@/components/index';
 
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
@@ -14,6 +14,9 @@ interface Lecture {
     title: string;
     duration: string;
     description: string;
+    videoUrl: string; // Add videoUrl to match the modal's Lecture interface
+    isCompleted?: boolean;
+    isLocked?: boolean;
 }
 
 // Define the interface for the course object
@@ -30,6 +33,9 @@ interface CourseDetails {
     lectures: Lecture[];
     rating: number;
     students: number;
+    isEnrolled?: boolean;
+    duration: string;
+    category: string;
 }
 
 // Define the API response structure
@@ -43,7 +49,9 @@ const StudentCourseDetails: React.FC = () => {
     const { courseId } = useParams<{ courseId: string }>();
     const [course, setCourse] = useState<CourseDetails | null>(null);
     const [loading, setLoading] = useState(true);
+    // @ts-ignore
     const [isEnrolled, setIsEnrolled] = useState(false);
+    const [isModalOpen, setIsModalOpen] = useState(false); // State for the modal
 
     useEffect(() => {
         const script = document.createElement('script');
@@ -57,23 +65,26 @@ const StudentCourseDetails: React.FC = () => {
 
         try {
             setLoading(true);
-            const courseResponse = await axios.get<APIResponse<CourseDetails>>(`${API_BASE_URL}/courses/${courseId}`);
+            const response = await axios.get<APIResponse<CourseDetails>>(`${API_BASE_URL}/courses/${courseId}`);
 
-            if (courseResponse.data.success) {
+            if (response.data.success) {
                 const fetchedCourse = {
-                    ...courseResponse.data.data,
+                    ...response.data.data,
                     rating: 4.8,
                     students: 1250,
+                    duration: '2h 30m', // Added to match the modal's Course interface
+                    category: 'Development' // Added to match the modal's Course interface
                 };
-                setCourse(fetchedCourse);
 
-                // New: Check enrollment status
-                const enrollmentResponse = await axios.get<APIResponse<{ isEnrolled: boolean }>>(`${API_BASE_URL}/student/enrollment-status/${courseId}`);
-                if (enrollmentResponse.data.success) {
-                    setIsEnrolled(enrollmentResponse.data.data.isEnrolled);
-                }
+                // Check for enrollment status (you'll need to implement this check on your backend)
+                // For now, it's mocked or based on a simple check
+                const isUserEnrolled = false; // Replace with actual enrollment check
+                fetchedCourse.isEnrolled = isUserEnrolled;
+
+                setCourse(fetchedCourse);
+                setIsEnrolled(isUserEnrolled);
             } else {
-                toast.error(courseResponse.data.message || 'Failed to fetch course details.');
+                toast.error(response.data.message || 'Failed to fetch course details.');
             }
         } catch (err: any) {
             console.error('Failed to fetch course details:', err);
@@ -87,11 +98,13 @@ const StudentCourseDetails: React.FC = () => {
         fetchCourseDetails();
     }, [courseId]);
 
-    const handleEnrollment = async () => {
-        if (!course || !course._id) return;
+    const handleEnrollment = async (courseId: string) => {
+        if (!courseId) return;
+        console.log(`Razorpay Key ID: ${import.meta.env.VITE_RAZORPAY_KEY_ID}`);
 
         try {
-            const orderResponse = await axios.post<APIResponse<any>>(`${API_BASE_URL}/payments/razorpay/order/${course._id}`);
+            const orderResponse = await axios.post<APIResponse<any>>(`${API_BASE_URL}/payments/razorpay/order/${courseId}`);
+            console.log("🚀 ~ handleEnrollment ~ orderResponse:", orderResponse);
             const order = orderResponse.data.data;
 
             const options = {
@@ -99,7 +112,7 @@ const StudentCourseDetails: React.FC = () => {
                 amount: order.amount,
                 currency: order.currency,
                 name: "Skillify Course Enrollment",
-                description: course.title,
+                description: course?.title,
                 order_id: order.id,
                 handler: async (response: any) => {
                     try {
@@ -107,12 +120,13 @@ const StudentCourseDetails: React.FC = () => {
                             razorpay_order_id: order.id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
-                            courseId: course._id,
+                            courseId: courseId,
                         });
 
                         if (verifyResponse.data.success) {
                             toast.success("Enrollment successful!");
-                            setIsEnrolled(true); // Update state on success
+                            setIsEnrolled(true);
+                            setIsModalOpen(true); // Open modal to show lectures
                         } else {
                             toast.error(verifyResponse.data.message || "Payment verification failed.");
                         }
@@ -146,80 +160,22 @@ const StudentCourseDetails: React.FC = () => {
 
     return (
         <div className="p-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
-                <div className="relative">
-                    <img
-                        src={course.thumbnail}
-                        alt={course.title}
-                        className="w-full h-80 object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900 to-transparent"></div>
-                    <div className="absolute bottom-6 left-6 text-white">
-                        <h1 className="text-4xl font-bold">{course.title}</h1>
-                        <p className="mt-2 text-xl font-medium">by {course.tutor.name}</p>
-                    </div>
-                </div>
+            <CourseCard
+                course={{ ...course, _id: course._id }} // Use course._id
+                onCourseClick={() => setIsModalOpen(true)}
+            />
 
-                <div className="p-6">
-                    <div className="flex items-center space-x-6 text-gray-600 dark:text-gray-400 mb-6">
-                        <div className="flex items-center space-x-2">
-                            <Award className="w-5 h-5" />
-                            <span>{course.rating} Rating</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Users className="w-5 h-5" />
-                            <span>{course.students} Students</span>
-                        </div>
-                        <div className="flex items-center space-x-2 text-green-600 dark:text-green-400 font-semibold">
-                            <DollarSign className="w-5 h-5" />
-                            <span>{course.price}</span>
-                        </div>
-                    </div>
-
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-3">Course Description</h2>
-                    <p className="text-gray-600 dark:text-gray-400">{course.description}</p>
-
-                    {/* Conditional rendering for lectures or enrollment */}
-                    {!isEnrolled ? (
-                        <div className="mt-8">
-                            <button
-                                onClick={handleEnrollment}
-                                className="w-full flex items-center justify-center space-x-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                            >
-                                <DollarSign className="w-5 h-5" />
-                                <span>Buy Now for {course.price}</span>
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="mt-8">
-                            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Course Lectures</h2>
-                            <div className="space-y-4">
-                                <div className="border border-gray-200 dark:border-gray-700 rounded-lg max-h-80 overflow-y-auto">
-                                    {course.lectures.length > 0 ? (
-                                        course.lectures.map((lecture, index) => (
-                                            <div
-                                                key={lecture._id}
-                                                className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 last:border-b-0"
-                                            >
-                                                <div className="flex items-center space-x-4">
-                                                    <PlayCircle className="w-6 h-6 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                                                    <div className="truncate">
-                                                        <h4 className="font-medium text-gray-900 dark:text-white">{`${index + 1}. ${lecture.title}`}</h4>
-                                                        <p className="text-sm text-gray-500 dark:text-gray-400 truncate">{lecture.description}</p>
-                                                    </div>
-                                                </div>
-                                                <span className="text-sm text-gray-500 dark:text-gray-400 flex-shrink-0 ml-4">{lecture.duration}</span>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <p className="p-4 text-center text-gray-500 dark:text-gray-400">No lectures found for this course.</p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            </div>
+            <CourseDetailModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                course={{
+                    ...course,
+                    id: course._id, // Map _id to id
+                    tutor: course.tutor.name, // Convert tutor object to string to match modal interface
+                    lectures: course.lectures.map(l => ({ ...l, id: l._id })) // Map _id to id
+                }}
+                onEnroll={handleEnrollment} // Changed from handleEnrollment to onEnroll
+            />
         </div>
     );
 };

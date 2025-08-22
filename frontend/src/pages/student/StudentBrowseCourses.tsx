@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
-import { CourseCard } from '@/components/index';
-import { useNavigate } from 'react-router-dom';
+import { CourseCard, CourseDetailModal } from '@/components/index';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 
@@ -15,7 +14,7 @@ interface API_Course {
   title: string;
   description: string;
   thumbnail: string;
-  tutor: { _id: string; name: string }; // Corrected: Tutor now has _id
+  tutor: { _id: string; name: string };
   price: number;
   rating: number;
   students: number;
@@ -24,7 +23,7 @@ interface API_Course {
   lectures: any[];
 }
 
-// Interface for the data used by the CourseCard component
+// Interface for the data used by the CourseCard and Modal components
 interface Course {
   _id: string;
   title: string;
@@ -40,6 +39,7 @@ interface Course {
   duration: string;
   category: string;
   lectures: any[];
+  isEnrolled?: boolean;
 }
 
 interface Category {
@@ -54,13 +54,32 @@ interface APIResponse<T> {
 }
 
 const StudentBrowseCourses: React.FC = () => {
-  const navigate = useNavigate();
   const [courses, setCourses] = useState<Course[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [searchTerm, setSearchTerm] = useState<string>('');
+  const [razorpayLoaded, setRazorpayLoaded] = useState(false); // New state to track script loading
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
+
+  // Load Razorpay script only once
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => {
+      setRazorpayLoaded(true);
+    };
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -99,8 +118,88 @@ const StudentBrowseCourses: React.FC = () => {
     fetchAllData();
   }, []);
 
-  const handleCourseClick = (_id: string) => {
-    navigate(`/student/course-details/${_id}`);
+  const openCourseModal = async (_id: string) => {
+    try {
+      const courseResponse = await axios.get<APIResponse<Course>>(`${API_BASE_URL}/courses/${_id}`);
+      const enrollmentResponse = await axios.get<APIResponse<{ isEnrolled: boolean }>>(`${API_BASE_URL}/student/enrollment-status/${_id}`);
+
+      if (courseResponse.data.success && enrollmentResponse.data.success) {
+        const formattedCourse = {
+          ...courseResponse.data.data,
+          isEnrolled: enrollmentResponse.data.data.isEnrolled,
+          tutor: courseResponse.data.data.tutor,
+          lectures: (courseResponse.data.data.lectures as any[]).map(l => ({ ...l, id: l._id }))
+        };
+
+        setSelectedCourse(formattedCourse);
+        setIsModalOpen(true);
+      } else {
+        toast.error("Failed to load course details for modal.");
+      }
+    } catch (err) {
+      toast.error("An error occurred while fetching course details.");
+      console.error(err);
+    }
+  };
+
+  const closeCourseModal = () => {
+    setIsModalOpen(false);
+    setSelectedCourse(null);
+  };
+
+  const handleEnrollment = async (courseId: string) => {
+    // Prevent enrollment if Razorpay script hasn't loaded
+    if (!razorpayLoaded) {
+      toast.error("Payment script not loaded yet. Please try again.");
+      return;
+    }
+
+    try {
+      const orderResponse = await axios.post<APIResponse<any>>(`${API_BASE_URL}/payments/razorpay/order/${courseId}`);
+      const order = orderResponse.data.data;
+
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: order.amount,
+        currency: order.currency,
+        name: "Skillify Course Enrollment",
+        description: selectedCourse?.title,
+        order_id: order.id,
+        handler: async (response: any) => {
+          try {
+            const verifyResponse = await axios.post<APIResponse<any>>(`${API_BASE_URL}/payments/razorpay/verify`, {
+              razorpay_order_id: order.id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+              courseId: courseId,
+            });
+
+            if (verifyResponse.data.success) {
+              toast.success("Enrollment successful!");
+              const updatedCourseResponse = await axios.get<APIResponse<Course>>(`${API_BASE_URL}/courses/${courseId}`);
+              if (updatedCourseResponse.data.success) {
+                setSelectedCourse({ ...updatedCourseResponse.data.data, isEnrolled: true });
+              }
+            } else {
+              toast.error(verifyResponse.data.message || "Payment verification failed.");
+            }
+          } catch (err) {
+            toast.error("An error occurred during payment verification.");
+          }
+        },
+        prefill: {
+          name: "Student Name",
+          email: "student@example.com",
+        },
+        theme: {
+          color: "#3B82F6",
+        },
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Failed to initiate payment.");
+    }
   };
 
   const filteredCourses = courses.filter(course => {
@@ -156,13 +255,35 @@ const StudentBrowseCourses: React.FC = () => {
             <CourseCard
               key={course._id}
               course={course}
-              onCourseClick={() => handleCourseClick(course._id)}
+              onCourseClick={() => openCourseModal(course._id)}
             />
           ))
         ) : (
           <p className="text-center text-gray-500 dark:text-gray-400">No courses found.</p>
         )}
       </div>
+
+      {selectedCourse && (
+        <CourseDetailModal
+          isOpen={isModalOpen}
+          onClose={closeCourseModal}
+          course={{
+            id: selectedCourse._id,
+            title: selectedCourse.title,
+            description: selectedCourse.description,
+            thumbnail: selectedCourse.thumbnail,
+            tutor: selectedCourse.tutor.name,
+            price: selectedCourse.price,
+            rating: selectedCourse.rating,
+            students: selectedCourse.students,
+            duration: selectedCourse.duration,
+            category: selectedCourse.category,
+            lectures: selectedCourse.lectures.map(l => ({ ...l, id: l._id })),
+            isEnrolled: selectedCourse.isEnrolled,
+          }}
+          onEnroll={handleEnrollment}
+        />
+      )}
     </div>
   );
 };

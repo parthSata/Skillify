@@ -22,12 +22,9 @@ export const createRazorpayOrder = asyncHandler(async (req, res) => {
   console.log("🚀 ~ razorpayInstance:", razorpayInstance);
 
   const course = await Course.findById(courseId);
-  console.log("🚀 ~ course:", course);
   if (!course) {
     throw new ApiError(404, "Course not found.");
   }
-
-  console.log("🚀 ~ student.enrolledCourses:", student.enrolledCourses);
 
   if (student.enrolledCourses.includes(courseId)) {
     throw new ApiError(400, "Student is already enrolled in this course.");
@@ -91,7 +88,6 @@ export const verifyPaymentAndEnroll = asyncHandler(async (req, res) => {
     { $addToSet: { enrolledCourses: courseId } },
     { new: true }
   );
-  console.log("🚀 ~ updatedUser:", updatedUser);
 
   if (!updatedUser) {
     throw new ApiError(500, "Failed to enroll student.");

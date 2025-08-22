@@ -10,8 +10,6 @@ import tutorCourseRouter from "./routes/tutor.course.routes.js"; // Import new t
 import paymentRouter from "./routes/payment.routes.js"; // Import the new payment router
 import studentRouter from "./routes/student.routes.js"; // Import student routes
 import { ApiError } from "./utils/ApiError.js";
-import dotenv from "dotenv";
-dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
