@@ -157,18 +157,20 @@ const AdminTutorsView: React.FC = () => {
             </div>
             {showApproveDialog && (
                 <ConfirmationDialog
+                    isOpen={showApproveDialog}
                     title="Confirm Approval"
                     message="Are you sure you want to approve this tutor? The tutor will be able to log in after approval."
                     onConfirm={handleConfirmApprove}
-                    onCancel={handleCancelApprove}
+                    onCancel={handleCancelApprove} // This prop is now correct
                 />
             )}
             {showDeleteDialog && (
                 <ConfirmationDialog
+                    isOpen={showDeleteDialog}
                     title="Confirm Deletion"
                     message="Are you sure you want to delete this tutor? This action cannot be undone."
                     onConfirm={handleConfirmDelete}
-                    onCancel={handleCancelDelete}
+                    onCancel={handleCancelDelete} // This prop is now correct
                 />
             )}
         </div>

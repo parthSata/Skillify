@@ -6,16 +6,19 @@ import {
   getReviewsForCourse,
   updateReview,
   deleteReview,
+  getReviewsForTutorCourses,
+  getTutorDashboardStats,
 } from "../controllers/review.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 
 router.route("/:courseId").get(getReviewsForCourse);
+router.route("/tutor/reviews").get(verifyJWT, getReviewsForTutorCourses);
+router.route("/tutor/stats").get(verifyJWT, getTutorDashboardStats);
 
 router.route("/").post(verifyJWT, addReview);
 
-// NEW: Routes for updating and deleting a review by ID
 router
   .route("/:reviewId")
   .put(verifyJWT, updateReview)

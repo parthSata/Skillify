@@ -163,7 +163,6 @@ const StudentMyCourses: React.FC = () => {
     };
 
     // Filter courses based on the selected category
-    console.log("🚀 ~ StudentMyCourses ~ enrolledCourses:", enrolledCourses)
     const filteredCourses = enrolledCourses.filter(course =>
         selectedCategory === 'All' || course.category === selectedCategory
     );

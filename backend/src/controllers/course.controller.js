@@ -9,6 +9,8 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import { uploadInCloudinary } from "../utils/cloudinary.js";
 import fs from "fs";
 import mongoose from "mongoose";
+import { Purchase } from "../models/purchase.model.js";
+import { Review } from "../models/review.model.js";
 
 // A new, cleaner helper function to process only NEW lecture files.
 const processNewLectures = async (lectureFiles, lectureTextData) => {
@@ -143,19 +145,87 @@ const getAllCourses = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, courses, "All courses fetched successfully."));
 });
 
-// TUTOR: GET ALL COURSES ADDED BY THEMSELVES
+// CORRECTED: TUTOR: GET ALL COURSES ADDED BY THEMSELVES
 const getAllTutorCourses = asyncHandler(async (req, res) => {
   const tutorId = req.user._id;
 
-  const courses = await Course.find({ tutor: tutorId })
-    .populate("category", "name")
-    .populate("tutor", "name")
-    .populate("lectures", "title duration description videoUrl");
+  // Use aggregation to fetch courses and join with Purchase and Review data
+  const coursesWithStats = await Course.aggregate([
+    {
+      $match: {
+        tutor: new mongoose.Types.ObjectId(tutorId),
+      },
+    },
+    {
+      $lookup: {
+        from: Purchase.collection.name,
+        localField: "_id",
+        foreignField: "course",
+        as: "purchases",
+        pipeline: [
+          {
+            $match: {
+              status: "success",
+            },
+          },
+        ],
+      },
+    },
+    {
+      $lookup: {
+        from: Review.collection.name,
+        localField: "_id",
+        foreignField: "course",
+        as: "reviews",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        title: 1,
+        thumbnail: 1,
+        isApproved: 1,
+        price: 1,
+        students: {
+          $size: {
+            $setIntersection: ["$purchases.student"],
+          },
+        },
+        revenue: {
+          $sum: "$purchases.amount",
+        },
+        rating: {
+          $avg: "$reviews.rating",
+        },
+        description: 1,
+        lectures: 1,
+        tutor: 1,
+        category: 1,
+      },
+    },
+  ]);
+
+  const formattedCourses = coursesWithStats.map((course) => ({
+    ...course,
+    revenue: course.revenue || 0,
+    rating: parseFloat((course.rating || 0).toFixed(1)),
+    students: course.students || 0,
+  }));
+
+  if (!formattedCourses || formattedCourses.length === 0) {
+    return res
+      .status(200)
+      .json(new ApiResponse(200, [], "Tutor's courses fetched successfully."));
+  }
 
   return res
     .status(200)
     .json(
-      new ApiResponse(200, courses, "Tutor's courses fetched successfully.")
+      new ApiResponse(
+        200,
+        formattedCourses,
+        "Tutor's courses fetched successfully."
+      )
     );
 });
 

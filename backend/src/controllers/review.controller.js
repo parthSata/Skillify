@@ -6,6 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
+import { Purchase } from "../models/purchase.model.js"; // Import the Purchase model
 
 // Helper function to update course rating
 const updateCourseRating = async (courseId) => {
@@ -106,7 +107,7 @@ const getReviewsForCourse = asyncHandler(async (req, res) => {
     );
 });
 
-// NEW: PUT - Update a review
+// PUT - Update a review
 const updateReview = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
   const { rating, comment } = req.body;
@@ -142,7 +143,7 @@ const updateReview = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, reviewToUpdate, "Review updated successfully."));
 });
 
-// NEW: DELETE - Delete a review
+// DELETE - Delete a review
 const deleteReview = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
   const studentId = req.user._id;
@@ -167,4 +168,134 @@ const deleteReview = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Review deleted successfully."));
 });
 
-export { addReview, getReviewsForCourse, updateReview, deleteReview };
+const getReviewsForTutorCourses = asyncHandler(async (req, res) => {
+  const tutorId = req.user._id;
+
+  // Find all course IDs for the current tutor
+  const tutorCourses = await Course.find({ tutor: tutorId }).select("_id");
+  const courseIds = tutorCourses.map((course) => course._id);
+
+  if (courseIds.length === 0) {
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(
+          200,
+          { reviews: [], totalReviews: 0 },
+          "No courses found for this tutor."
+        )
+      );
+  }
+
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = parseInt(req.query.skip) || 0;
+
+  // Get total review count for pagination
+  const totalReviews = await Review.countDocuments({
+    course: { $in: courseIds },
+  });
+
+  // Fetch reviews for those courses, sorted by creation date
+  const reviews = await Review.find({
+    course: { $in: courseIds },
+  })
+    .populate("student", "name avatar")
+    .populate("course", "title")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { reviews, totalReviews },
+        "Tutor's course reviews fetched successfully."
+      )
+    );
+});
+
+const getTutorDashboardStats = asyncHandler(async (req, res) => {
+  const tutorId = req.user._id;
+
+  // Find all courses by this tutor to get their IDs
+  const tutorCourses = await Course.find({ tutor: tutorId }).select("_id");
+
+  if (tutorCourses.length === 0) {
+    return res.status(200).json(
+      new ApiResponse(
+        200,
+        {
+          totalCourses: 0,
+          totalStudents: 0,
+          averageRating: 0,
+          monthlyRevenue: 0,
+        },
+        "No courses found for this tutor."
+      )
+    );
+  }
+
+  const courseIds = tutorCourses.map((course) => course._id);
+
+  // Use Purchase model to get total students and total revenue for the tutor's courses
+  const purchaseStats = await Purchase.aggregate([
+    {
+      $match: {
+        course: { $in: courseIds },
+        status: "success", // Ensure only successful purchases are counted
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        totalStudents: { $addToSet: "$student" }, // Use $addToSet to count unique students
+        totalRevenue: { $sum: "$amount" }, // Sum the amount from purchases
+      },
+    },
+  ]);
+
+  // Aggregate stats from the Review model for average rating
+  const reviewStats = await Review.aggregate([
+    {
+      $match: { course: { $in: courseIds } },
+    },
+    {
+      $group: {
+        _id: null,
+        averageRating: { $avg: "$rating" },
+      },
+    },
+  ]);
+
+  const totalStudents = purchaseStats[0]?.totalStudents?.length || 0;
+  const totalRevenue = purchaseStats[0]?.totalRevenue || 0;
+  const averageRating = reviewStats[0]?.averageRating || 0;
+
+  // Simplified monthly revenue: In a real app, you would filter purchases by date
+  const monthlyRevenue = totalRevenue;
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        totalCourses: tutorCourses.length,
+        totalStudents: totalStudents,
+        averageRating: parseFloat(averageRating.toFixed(1)),
+        monthlyRevenue: monthlyRevenue,
+      },
+      "Dashboard stats fetched successfully."
+    )
+  );
+});
+
+
+export {
+  addReview,
+  getReviewsForCourse,
+  updateReview,
+  deleteReview,
+  getReviewsForTutorCourses,
+  getTutorDashboardStats,
+};

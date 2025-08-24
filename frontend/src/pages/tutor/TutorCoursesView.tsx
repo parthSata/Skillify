@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TutorCoursesTable, CourseForm } from '@/components/index';
-import { ConfirmationDialog } from '@/components/ConfirmationDialog'; // Correct import path
+import { ConfirmationDialog } from '@/components/ConfirmationDialog';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
@@ -17,7 +17,7 @@ interface APIResponse<T> {
     message?: string;
 }
 
-// Define the Course interface from the API
+// Define the Course interface from the API with dynamic fields
 interface API_Course {
     _id: string;
     title: string;
@@ -34,6 +34,9 @@ interface API_Course {
     thumbnail: string;
     lectures: any[];
     isApproved: boolean;
+    students: number;
+    revenue: number;
+    rating: number;
 }
 
 // Define the interface for the component's state and props
@@ -69,9 +72,9 @@ const TutorCoursesView: React.FC = () => {
                 const formattedCourses: ComponentCourse[] = response.data.data.map((course) => ({
                     _id: course._id,
                     title: course.title,
-                    students: 0,
-                    revenue: '0',
-                    rating: 0,
+                    students: course.students,
+                    revenue: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(course.revenue),
+                    rating: course.rating || 0,
                     status: course.isApproved ? 'active' : 'pending',
                     thumbnail: course.thumbnail,
                 }));
@@ -136,7 +139,7 @@ const TutorCoursesView: React.FC = () => {
 
     const handleToggleStatus = async (course: ComponentCourse) => {
         try {
-            const newStatus = course.status === 'active' ? 'inactive' : 'active';
+            const newStatus = course.status === 'active' ? 'pending' : 'active';
             const response = await axios.patch<APIResponse<API_Course>>(
                 `${API_BASE_URL}/tutor/courses/${course._id}/status`,
                 { isApproved: newStatus === 'active' }
