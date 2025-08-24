@@ -181,10 +181,10 @@ const getEnrolledCourses = asyncHandler(async (req, res) => {
   const student = await User.findById(studentId).populate({
     path: "enrolledCourses",
     model: "Course",
-    populate: {
-      path: "tutor",
-      select: "name", // Only fetch the tutor's name
-    },
+    populate: [
+      { path: "tutor", select: "name" }, // Only fetch the tutor's name
+      { path: "category", select: "name" }, // FIX: Add this line to populate the category name
+    ],
   });
 
   if (!student) {

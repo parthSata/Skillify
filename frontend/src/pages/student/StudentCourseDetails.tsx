@@ -1,3 +1,23 @@
+
+
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+//NO USE OF THIS FILE
+
+
+
+
+
+
+
+
 // src/pages/StudentCourseDetails.tsx
 
 import React, { useState, useEffect } from 'react';
@@ -160,6 +180,7 @@ const StudentCourseDetails: React.FC = () => {
 
     return (
         <div className="p-6">
+            <h1 className="bg-red">Hello World</h1>
             <CourseCard
                 course={{ ...course, _id: course._id }} // Use course._id
                 onCourseClick={() => setIsModalOpen(true)}

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { StudentDashboardHome, StudentBrowseCourses, StudentMyCourses, StudentProgress, StudentCourseDetails, PageNotFound } from '@/components/index';
+import { StudentDashboardHome, StudentBrowseCourses, StudentMyCourses, StudentProgress, PageNotFound } from '@/components/index';
 
 const StudentNavigation: React.FC = () => {
   return (
@@ -12,7 +12,7 @@ const StudentNavigation: React.FC = () => {
       <Route path="browse" element={<StudentBrowseCourses />} />
       <Route path="my-courses" element={<StudentMyCourses />} />
       <Route path="progress" element={<StudentProgress />} />
-      <Route path="course-details/:courseId" element={<StudentCourseDetails />} />
+      {/* <Route path="course-details/:courseId" element={<StudentCourseDetails />} /> */}
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

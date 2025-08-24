@@ -1,5 +1,3 @@
-// src/pages/student/StudentBrowseCourses.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Search, Filter } from 'lucide-react';
 import { CourseCard, CourseDetailModal } from '@/components/index';
@@ -62,6 +60,9 @@ const StudentBrowseCourses: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [razorpayLoaded, setRazorpayLoaded] = useState(false); // New state to track script loading
 
+  // NEW: State to hold the current student's ID
+  const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
+
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
@@ -85,6 +86,10 @@ const StudentBrowseCourses: React.FC = () => {
     const fetchAllData = async () => {
       try {
         setLoading(true);
+        // FIX: Change the route to match the backend
+        const studentResponse = await axios.get<APIResponse<any>>(`${API_BASE_URL}/users/me`);
+        setCurrentStudentId(studentResponse.data.data._id);
+
         const coursesResponse = await axios.get<APIResponse<API_Course[]>>(`${API_BASE_URL}/courses/all`);
         const categoriesResponse = await axios.get<APIResponse<Category[]>>(`${API_BASE_URL}/categories`);
 
@@ -121,7 +126,8 @@ const StudentBrowseCourses: React.FC = () => {
   const openCourseModal = async (_id: string) => {
     try {
       const courseResponse = await axios.get<APIResponse<Course>>(`${API_BASE_URL}/courses/${_id}`);
-      const enrollmentResponse = await axios.get<APIResponse<{ isEnrolled: boolean }>>(`${API_BASE_URL}/student/enrollment-status/${_id}`);
+      // Send studentId with the request to get enrollment status
+      const enrollmentResponse = await axios.get<APIResponse<{ isEnrolled: boolean }>>(`${API_BASE_URL}/student/enrollment-status/${_id}?studentId=${currentStudentId}`);
 
       if (courseResponse.data.success && enrollmentResponse.data.success) {
         const formattedCourse = {
@@ -282,6 +288,8 @@ const StudentBrowseCourses: React.FC = () => {
             isEnrolled: selectedCourse.isEnrolled,
           }}
           onEnroll={handleEnrollment}
+          // NEW: Pass the dynamic student ID
+          currentStudentId={currentStudentId}
         />
       )}
     </div>

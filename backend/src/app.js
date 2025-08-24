@@ -9,6 +9,7 @@ import categoryRouter from "./routes/category.routes.js"; // Import new category
 import tutorCourseRouter from "./routes/tutor.course.routes.js"; // Import new tutor course routes
 import paymentRouter from "./routes/payment.routes.js"; // Import the new payment router
 import studentRouter from "./routes/student.routes.js"; // Import student routes
+import reviewRouter from "./routes/review.routes.js"; // Import review routes
 import { ApiError } from "./utils/ApiError.js";
 
 const app = express();
@@ -42,6 +43,9 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/tutor/courses", tutorCourseRouter); // Add the new tutor course route
 
 app.use("/api/v1/payments", paymentRouter); // Register the new payment router
+
+// Student routes
+app.use("/api/v1/reviews", reviewRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

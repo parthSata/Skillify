@@ -6,14 +6,12 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { Course } from "../models/course.model.js";
-
-// DO NOT create the instance at the global level
-// const razorpayInstance = new Razorpay({...});
+import { Purchase } from "../models/purchase.model.js"; // <-- ADD THIS IMPORT
 
 // Create an order for a course
 export const createRazorpayOrder = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
-  const student = req.user; // Initialize Razorpay instance inside the function
+  const student = req.user;
 
   const razorpayInstance = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -28,10 +26,9 @@ export const createRazorpayOrder = asyncHandler(async (req, res) => {
 
   if (student.enrolledCourses.includes(courseId)) {
     throw new ApiError(400, "Student is already enrolled in this course.");
-  } // FIX: Round the amount to ensure it is a valid integer
+  }
 
-  const amount = Math.round(course.price * 100); // FIX: Generate a shorter receipt string to avoid length error
-
+  const amount = Math.round(course.price * 100);
   const receipt = `rcpt_${student._id.toString().substring(0, 8)}_${courseId.substring(0, 8)}`;
 
   const options = {
@@ -83,6 +80,26 @@ export const verifyPaymentAndEnroll = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Payment verification failed. Invalid signature.");
   }
 
+  const course = await Course.findById(courseId);
+  if (!course) {
+    throw new ApiError(404, "Course not found.");
+  }
+
+  // --- NEW CODE: Create the Purchase document after successful verification ---
+  const newPurchase = await Purchase.create({
+    student: studentId,
+    course: courseId,
+    amount: course.price,
+    paymentId: razorpay_payment_id,
+    status: "success",
+  });
+
+  if (!newPurchase) {
+    throw new ApiError(500, "Failed to record purchase.");
+  }
+  // --- END OF NEW CODE ---
+
+  // Update the User document
   const updatedUser = await User.findByIdAndUpdate(
     studentId,
     { $addToSet: { enrolledCourses: courseId } },
@@ -97,8 +114,8 @@ export const verifyPaymentAndEnroll = asyncHandler(async (req, res) => {
     new ApiResponse(
       200,
       {
-        courseId: courseId,
-        razorpay_payment_id,
+        purchase: newPurchase, // You can now send the purchase record in the response
+        updatedUser: updatedUser,
       },
       "Payment successful and student enrolled."
     )

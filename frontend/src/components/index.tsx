@@ -32,7 +32,7 @@ export { default as StudentDashboardHome } from "@/pages/student/StudentDashboar
 export { default as StudentBrowseCourses } from "@/pages/student/StudentBrowseCourses";
 export { default as StudentMyCourses } from "@/pages/student/StudentMyCourses";
 export { default as StudentProgress } from "@/pages/student/StudentProgress";
-export { default as StudentCourseDetails } from "@/pages/student/StudentCourseDetails";
+// export { default as StudentCourseDetails } from "@/pages/student/StudentCourseDetails";
 export { default as CourseCard } from "@/components/CourseCard";
 export { default as CourseDetailModal } from "@/components/CourseDetailModal";
 export { default as VidePlayer } from "@/components/VideoPlayer";
