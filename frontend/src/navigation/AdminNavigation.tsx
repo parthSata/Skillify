@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { AdminCategoriesView, AdminCoursesView, AdminCreateCourseView, AdminDashboardView, AdminStudentsView, AdminTutorsView, } from '@/components/index';
+import { AdminAnalyticsView, AdminCategoriesView, AdminCoursesView, AdminCreateCourseView, AdminDashboardView, AdminStudentsView, AdminTutorsView, } from '@/components/index';
 
 interface AdminNavigationProps {
   initialView?: string;
@@ -19,7 +19,7 @@ const AdminNavigation: React.FC<AdminNavigationProps> = () => {
       <Route path="categories" element={<AdminCategoriesView />} />
       <Route path="create-course" element={<AdminCreateCourseView />} />
       {/* Analytics route remains the same, you can add a dedicated component for it */}
-      <Route path="analytics" element={<div>Admin Analytics View</div>} />
+      <Route path="analytics" element={<AdminAnalyticsView />} />
       <Route path="*" element={<div>404 Admin Page Not Found</div>} />
     </Routes>
   );

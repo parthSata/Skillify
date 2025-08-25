@@ -37,7 +37,7 @@ interface AdminStatsData {
     averageRating: number;
 }
 
-// Stats card component (now defined locally)
+// Stats card component
 const AdminStatsCard: React.FC<{ title: string; value: string | number; icon: React.ElementType; color: string }> = ({ title, value, icon: Icon, color }) => {
     return (
         <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-md hover:shadow-lg transition-all duration-300">
@@ -57,7 +57,7 @@ const AdminStatsCard: React.FC<{ title: string; value: string | number; icon: Re
 const AdminDashboardView: React.FC = () => {
     const [pendingTutors, setPendingTutors] = useState<Tutor[]>([]);
     const [reviewsForModeration, setReviewsForModeration] = useState<Review[]>([]);
-    const [stats, setStats] = useState<AdminStatsData | null>(null);
+    const [stats, setStats] = useState<AdminStatsData | null>(null); // Re-added state for stats
     const [loading, setLoading] = useState(true);
 
     const [isDeleteReviewDialogOpen, setIsDeleteReviewDialogOpen] = useState(false);
@@ -71,17 +71,21 @@ const AdminDashboardView: React.FC = () => {
     const fetchDashboardData = async () => {
         try {
             setLoading(true);
-            // Fetch dynamic stats
-            const statsResponse = await axios.get<APIResponse<AdminStatsData>>(`${API_BASE_URL}/reviews/admin/stats`);
-            setStats(statsResponse.data.data);
 
-            // Fetch pending tutors
-            const tutorsResponse = await axios.get<APIResponse<Tutor[]>>(`${API_BASE_URL}/users/admin/tutors/pending`);
-            setPendingTutors(tutorsResponse.data.data);
+            // Fetch moderation and stats data in parallel
+            const [
+                statsResponse,
+                tutorsResponse,
+                reviewsResponse
+            ] = await Promise.all([
+                axios.get<APIResponse<AdminStatsData>>(`${API_BASE_URL}/admin/analytics`), // Re-added analytics fetch
+                axios.get<APIResponse<Tutor[]>>(`${API_BASE_URL}/admin/tutors/pending`),
+                axios.get<APIResponse<Review[]>>(`${API_BASE_URL}/admin/reviews/pending`)
+            ]);
 
-            // Fetch reviews for moderation
-            const reviewsResponse = await axios.get<APIResponse<Review[]>>(`${API_BASE_URL}/reviews/admin/pending`);
-            setReviewsForModeration(reviewsResponse.data.data);
+            setStats(statsResponse.data.data); // Set the stats state
+            setPendingTutors(tutorsResponse.data.data || []);
+            setReviewsForModeration(reviewsResponse.data.data || []);
 
         } catch (error) {
             console.error('Failed to fetch admin dashboard data:', error);
@@ -104,7 +108,7 @@ const AdminDashboardView: React.FC = () => {
     const handleConfirmApproveTutor = async () => {
         if (!tutorToApprove) return;
         try {
-            await axios.patch<APIResponse<any>>(`${API_BASE_URL}/users/admin/tutors/${tutorToApprove._id}/approve`);
+            await axios.patch<APIResponse<any>>(`${API_BASE_URL}/admin/tutors/approve/${tutorToApprove._id}`);
             toast.success('Tutor approved successfully.');
             fetchDashboardData();
         } catch (error: any) {
@@ -123,7 +127,7 @@ const AdminDashboardView: React.FC = () => {
     const handleConfirmRejectTutor = async () => {
         if (!tutorToReject) return;
         try {
-            await axios.delete<APIResponse<any>>(`${API_BASE_URL}/users/admin/tutors/${tutorToReject._id}/reject`);
+            await axios.delete<APIResponse<any>>(`${API_BASE_URL}/admin/users/${tutorToReject._id}`);
             toast.success('Tutor rejected and deleted successfully.');
             fetchDashboardData();
         } catch (error: any) {
@@ -137,7 +141,7 @@ const AdminDashboardView: React.FC = () => {
     // Handlers for Review Moderation
     const handleApproveReview = async (review: Review) => {
         try {
-            await axios.patch<APIResponse<any>>(`${API_BASE_URL}/reviews/admin/reviews/${review._id}/approve`);
+            await axios.patch<APIResponse<any>>(`${API_BASE_URL}/admin/reviews/${review._id}/approve`);
             toast.success('Review approved successfully.');
             fetchDashboardData();
         } catch (error: any) {
@@ -153,7 +157,7 @@ const AdminDashboardView: React.FC = () => {
     const handleConfirmDeleteReview = async () => {
         if (!reviewToDelete) return;
         try {
-            await axios.delete<APIResponse<any>>(`${API_BASE_URL}/reviews/admin/reviews/${reviewToDelete._id}`);
+            await axios.delete<APIResponse<any>>(`${API_BASE_URL}/admin/reviews/${reviewToDelete._id}/delete`);
             toast.success('Review deleted successfully.');
             fetchDashboardData();
         } catch (error: any) {
@@ -168,10 +172,9 @@ const AdminDashboardView: React.FC = () => {
         { title: 'Total Courses', value: stats.totalCourses, icon: BookOpen, color: 'blue' },
         { title: 'Total Students', value: stats.totalStudents, icon: Users, color: 'green' },
         { title: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'purple' },
-        { title: 'Average Rating', value: stats.averageRating, icon: TrendingUp, color: 'orange' },
+        { title: 'Average Rating', value: stats.averageRating.toFixed(1), icon: TrendingUp, color: 'orange' },
     ] : [];
 
-    // Corrected code to handle loading state
     if (loading) {
         return (
             <div className="flex justify-center items-center h-screen">

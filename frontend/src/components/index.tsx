@@ -18,6 +18,7 @@ export { default as AdminCoursesView } from "@/pages/admin/AdminCoursesView";
 export { default as AdminCreateCourseView } from "@/pages/admin/AdminCreateCourseView";
 export { default as AdminTutorsView } from "@/pages/admin/AdminTutorsView";
 export { default as AdminStudentsView } from "@/pages/admin/AdminStudentsView";
+export { default as AdminAnalyticsView } from "@/pages/admin/AdminAnalyticsView";
 export { ConfirmationDialog } from "@/components/ConfirmationDialog";
 
 export { default as TutorCategoriesList } from "@/pages/tutor/TutorCategoriesList"; // This is the renamed component

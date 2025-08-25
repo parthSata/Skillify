@@ -2,7 +2,6 @@
 
 import { Review } from "../models/review.model.js";
 import { Course } from "../models/course.model.js";
-import { User } from "../models/user.model.js"; // <-- Add this import
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -147,7 +146,6 @@ const deleteReview = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
   const studentId = req.user._id;
 
-  console.log("🚀 ~ studentId:", studentId);
   const reviewToDelete = await Review.findOneAndDelete({
     _id: reviewId,
     student: studentId,
@@ -165,22 +163,6 @@ const deleteReview = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json(new ApiResponse(200, null, "Review deleted successfully."));
-});
-
-const deleteReviewByAdmin = asyncHandler(async (req, res) => {
-  const { reviewId } = req.params;
-
-  const reviewToDelete = await Review.findByIdAndDelete(reviewId);
-
-  if (!reviewToDelete) {
-    throw new ApiError(404, "Review not found.");
-  }
-
-  await updateCourseRating(reviewToDelete.course);
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, null, "Review deleted successfully by admin."));
 });
 
 const getReviewsForTutorCourses = asyncHandler(async (req, res) => {
@@ -298,64 +280,6 @@ const getTutorDashboardStats = asyncHandler(async (req, res) => {
   );
 });
 
-// NEW: Get global admin stats
-const getAdminDashboardStats = asyncHandler(async (req, res) => {
-  const totalCourses = await Course.countDocuments();
-  const totalStudents = await User.countDocuments({ role: "student" }); // The `User` model was not imported.
-  const totalRevenue = await Purchase.aggregate([
-    { $match: { status: "success" } },
-    { $group: { _id: null, totalRevenue: { $sum: "$amount" } } },
-  ]);
-  const averageRating = await Review.aggregate([
-    { $group: { _id: null, averageRating: { $avg: "$rating" } } },
-  ]);
-
-  const stats = {
-    totalCourses,
-    totalStudents,
-    totalRevenue: totalRevenue[0]?.totalRevenue || 0,
-    averageRating: averageRating[0]?.averageRating || 0,
-  };
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, stats, "Admin dashboard stats fetched successfully.")
-    );
-});
-
-// NEW: GET all reviews that are pending approval
-const getPendingReviews = asyncHandler(async (req, res) => {
-  const reviews = await Review.find({})
-    .populate("student", "name avatar")
-    .populate("course", "title")
-    .sort({ createdAt: -1 });
-
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, reviews, "Pending reviews fetched successfully.")
-    );
-});
-
-// NEW: PATCH to approve a review
-const approveReview = asyncHandler(async (req, res) => {
-  const { reviewId } = req.params;
-  const review = await Review.findByIdAndUpdate(
-    reviewId,
-    { isApproved: true },
-    { new: true }
-  );
-
-  if (!review) {
-    throw new ApiError(404, "Review not found.");
-  }
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, review, "Review approved successfully."));
-});
-
 export {
   addReview,
   getReviewsForCourse,
@@ -363,8 +287,4 @@ export {
   deleteReview,
   getReviewsForTutorCourses,
   getTutorDashboardStats,
-  getPendingReviews,
-  approveReview,
-  getAdminDashboardStats, // <-- This function should also be exported.
-  deleteReviewByAdmin, // <-- Export the new function
 };
