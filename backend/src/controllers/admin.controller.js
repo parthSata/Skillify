@@ -4,6 +4,7 @@ import { User } from "../models/user.model.js";
 import { Course } from "../models/course.model.js";
 import { Purchase } from "../models/purchase.model.js";
 import { Review } from "../models/review.model.js";
+import { Category } from "../models/category.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -35,8 +36,12 @@ const createInitialAdmin = async () => {
 const getAdminAnalytics = asyncHandler(async (req, res) => {
   const totalCourses = await Course.countDocuments();
   const totalStudents = await User.countDocuments({ role: "student" });
+  const totalTutors = await User.countDocuments({
+    role: "tutor",
+    isApproved: true,
+  });
   const totalRevenue = await Purchase.aggregate([
-    { $match: { status: "success" } },
+    { $match: { status: "completed" } },
     { $group: { _id: null, totalRevenue: { $sum: "$amount" } } },
   ]);
   const averageRating = await Review.aggregate([
@@ -46,8 +51,10 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
   const stats = {
     totalCourses,
     totalStudents,
-    totalRevenue: totalRevenue[0]?.totalRevenue || 0,
-    averageRating: averageRating[0]?.averageRating || 0,
+    totalTutors, // Use fallback to 0 if the aggregation pipeline returns no results
+    totalRevenue: totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0,
+    averageRating:
+      averageRating.length > 0 ? averageRating[0].averageRating : 0,
   };
 
   return res
@@ -59,42 +66,65 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
 
 // GET: Get top performing courses based on total revenue
 const getTopCourses = asyncHandler(async (req, res) => {
-  const topCourses = await Purchase.aggregate([
-    { $match: { status: "success" } },
-    {
-      $group: {
-        _id: "$course",
-        totalRevenue: { $sum: "$amount" },
-        totalPurchases: { $sum: 1 },
-      },
-    },
-    { $sort: { totalRevenue: -1 } },
-    { $limit: 5 },
+  const topCourses = await Course.aggregate([
     {
       $lookup: {
-        from: "courses",
+        from: "purchases",
         localField: "_id",
-        foreignField: "_id",
-        as: "courseDetails",
+        foreignField: "course",
+        as: "purchases",
       },
     },
-    { $unwind: "$courseDetails" },
+    {
+      $match: {
+        "purchases.status": "completed",
+      },
+    },
+    {
+      $addFields: {
+        totalRevenue: { $sum: "$purchases.amount" },
+        studentCount: { $size: "$purchases" },
+      },
+    },
     {
       $lookup: {
         from: "users",
-        localField: "courseDetails.tutor",
+        localField: "tutor",
         foreignField: "_id",
         as: "tutorDetails",
       },
     },
-    { $unwind: "$tutorDetails" },
+    {
+      $unwind: "$tutorDetails",
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "_id",
+        foreignField: "course",
+        as: "reviews",
+      },
+    },
+    {
+      $addFields: {
+        averageRating: { $avg: "$reviews.rating" },
+      },
+    },
+    {
+      $sort: { totalRevenue: -1 },
+    },
+    {
+      $limit: 5,
+    },
     {
       $project: {
-        _id: "$courseDetails._id",
-        title: "$courseDetails.title",
-        tutorName: "$tutorDetails.name",
-        totalRevenue: 1,
-        totalPurchases: 1,
+        _id: 1,
+        title: 1,
+        thumbnail: 1,
+        tutor: "$tutorDetails.name",
+        students: "$studentCount",
+        revenue: "$totalRevenue",
+        rating: { $ifNull: ["$averageRating", 0] },
       },
     },
   ]);
@@ -108,22 +138,26 @@ const getTopCourses = asyncHandler(async (req, res) => {
 // GET: Get top performing tutors based on total revenue from their courses
 const getTopTutors = asyncHandler(async (req, res) => {
   const topTutors = await Course.aggregate([
-    { $group: { _id: "$tutor", courses: { $push: "$_id" } } },
     {
       $lookup: {
         from: "purchases",
-        localField: "courses",
+        localField: "_id",
         foreignField: "course",
         as: "purchases",
       },
     },
-    { $unwind: "$purchases" },
-    { $match: { "purchases.status": "success" } },
+    {
+      $unwind: "$purchases",
+    },
+    {
+      $match: { "purchases.status": "completed" },
+    },
     {
       $group: {
-        _id: "$_id",
+        _id: "$tutor",
         totalRevenue: { $sum: "$purchases.amount" },
-        totalCourses: { $sum: 1 },
+        courses: { $addToSet: "$_id" },
+        students: { $addToSet: "$purchases.student" },
       },
     },
     {
@@ -134,23 +168,239 @@ const getTopTutors = asyncHandler(async (req, res) => {
         as: "tutorDetails",
       },
     },
-    { $unwind: "$tutorDetails" },
+    {
+      $unwind: "$tutorDetails",
+    },
+    {
+      $lookup: {
+        from: "reviews",
+        localField: "_id",
+        foreignField: "tutor",
+        as: "reviews",
+      },
+    },
+    {
+      $addFields: {
+        averageRating: { $avg: "$reviews.rating" },
+      },
+    },
+    {
+      $sort: { totalRevenue: -1 },
+    },
+    {
+      $limit: 5,
+    },
     {
       $project: {
         _id: 1,
-        tutorName: "$tutorDetails.name",
+        name: "$tutorDetails.name",
         avatar: "$tutorDetails.avatar",
-        totalRevenue: 1,
-        totalCourses: 1,
+        courses: { $size: "$courses" },
+        students: { $size: "$students" },
+        revenue: "$totalRevenue",
+        rating: { $ifNull: ["$averageRating", 0] },
       },
     },
-    { $sort: { totalRevenue: -1 } },
-    { $limit: 5 },
   ]);
   return res
     .status(200)
     .json(new ApiResponse(200, topTutors, "Top tutors fetched successfully."));
 });
+
+// NEW: Get recent completed transactions
+const getRecentTransactions = asyncHandler(async (req, res) => {
+  const transactions = await Purchase.aggregate([
+    {
+      $match: {
+        status: "completed",
+      },
+    },
+    {
+      $sort: {
+        createdAt: -1,
+      },
+    },
+    {
+      $limit: 10,
+    },
+    {
+      $lookup: {
+        from: "users",
+        localField: "student",
+        foreignField: "_id",
+        as: "studentDetails",
+      },
+    },
+    {
+      $unwind: "$studentDetails",
+    },
+    {
+      $lookup: {
+        from: "courses",
+        localField: "course",
+        foreignField: "_id",
+        as: "courseDetails",
+      },
+    },
+    {
+      $unwind: "$courseDetails",
+    },
+    {
+      $project: {
+        _id: 1,
+        student: "$studentDetails.name",
+        course: "$courseDetails.title",
+        amount: 1,
+        date: "$createdAt",
+        status: 1,
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        transactions,
+        "Recent transactions fetched successfully."
+      )
+    );
+});
+
+// NEW: Get monthly revenue data
+const getMonthlyRevenue = asyncHandler(async (req, res) => {
+  const currentYear = new Date().getFullYear();
+  const monthlyData = await Purchase.aggregate([
+    {
+      $match: {
+        status: "completed",
+        createdAt: {
+          $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
+          $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`),
+        },
+      },
+    },
+    {
+      $group: {
+        _id: {
+          month: { $month: "$createdAt" },
+        },
+        revenue: { $sum: "$amount" },
+        students: { $addToSet: "$student" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        month: {
+          $let: {
+            vars: {
+              monthsInString: [
+                "",
+                "Jan",
+                "Feb",
+                "Mar",
+                "Apr",
+                "May",
+                "Jun",
+                "Jul",
+                "Aug",
+                "Sep",
+                "Oct",
+                "Nov",
+                "Dec",
+              ],
+            },
+            in: { $arrayElemAt: ["$$monthsInString", "$_id.month"] },
+          },
+        },
+        revenue: 1,
+        students: { $size: "$students" },
+      },
+    },
+    {
+      $sort: {
+        month: 1,
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, monthlyData, "Monthly revenue fetched."));
+});
+
+// NEW: Get statistics per category
+const getCategoryStats = asyncHandler(async (req, res) => {
+  const categoryStats = await Category.aggregate([
+    {
+      $lookup: {
+        from: "courses",
+        localField: "_id",
+        foreignField: "category",
+        as: "courses",
+      },
+    },
+    {
+      $unwind: { path: "$courses", preserveNullAndEmptyArrays: true },
+    },
+    {
+      $lookup: {
+        from: "purchases",
+        localField: "courses._id",
+        foreignField: "course",
+        as: "purchases",
+      },
+    },
+    {
+      $unwind: { path: "$purchases", preserveNullAndEmptyArrays: true },
+    },
+    {
+      $match: {
+        $or: [
+          { "purchases.status": "completed" },
+          { purchases: { $exists: false } },
+        ],
+      },
+    },
+    {
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        color: { $first: "$color" },
+        coursesCount: { $addToSet: "$courses._id" },
+        studentsCount: { $addToSet: "$purchases.student" },
+        revenue: { $sum: "$purchases.amount" },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        name: 1,
+        color: 1,
+        courses: { $size: { $ifNull: ["$coursesCount", []] } },
+        students: { $size: { $ifNull: ["$studentsCount", []] } },
+        revenue: { $ifNull: ["$revenue", 0] },
+      },
+    },
+    {
+      $sort: { revenue: -1 },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        categoryStats,
+        "Category stats fetched successfully."
+      )
+    );
+});
+
+// All other existing controllers... (getPendingTutors, approveTutor, etc.) remain as they are.
 
 const getPendingTutors = asyncHandler(async (req, res) => {
   const tutors = await User.find({ role: "tutor", isApproved: false }).select(
@@ -223,9 +473,9 @@ const getAllStudents = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, students, "All students fetched successfully"));
 });
 
-// NEW: GET all reviews that are pending approval
+// GET all reviews that are pending approval
 const getPendingReviews = asyncHandler(async (req, res) => {
-  const reviews = await Review.find({})
+  const reviews = await Review.find({ isApproved: false })
     .populate("student", "name avatar")
     .populate("course", "title")
     .sort({ createdAt: -1 });
@@ -237,7 +487,7 @@ const getPendingReviews = asyncHandler(async (req, res) => {
     );
 });
 
-// NEW: PATCH to approve a review
+// PATCH to approve a review
 const approveReview = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
   const review = await Review.findByIdAndUpdate(
@@ -255,7 +505,7 @@ const approveReview = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, review, "Review approved successfully."));
 });
 
-// NEW: Admin-specific function to delete a review
+// Admin-specific function to delete a review
 const deleteReviewByAdmin = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
 
@@ -263,11 +513,19 @@ const deleteReviewByAdmin = asyncHandler(async (req, res) => {
 
   if (!reviewToDelete) {
     throw new ApiError(404, "Review not found.");
-  }
+  } // Update the course's average rating after deleting a review
 
-  // You will need a way to update the course rating after a review is deleted
-  // const updateCourseRating = async (courseId) => { ... }
-  // await updateCourseRating(reviewToDelete.course);
+  if (reviewToDelete.course) {
+    const course = await Course.findById(reviewToDelete.course);
+    if (course) {
+      const result = await Review.aggregate([
+        { $match: { course: course._id, isApproved: true } },
+        { $group: { _id: null, avgRating: { $avg: "$rating" } } },
+      ]);
+      course.rating = result.length > 0 ? result[0].avgRating : 0;
+      await course.save();
+    }
+  }
 
   return res
     .status(200)
@@ -275,15 +533,18 @@ const deleteReviewByAdmin = asyncHandler(async (req, res) => {
 });
 
 export {
+  createInitialAdmin,
+  getAdminAnalytics,
+  getTopCourses,
+  getTopTutors,
+  getRecentTransactions,
+  getMonthlyRevenue,
+  getCategoryStats,
   getPendingTutors,
   getAllTutors,
   approveTutor,
   deleteUser,
   getAllStudents,
-  createInitialAdmin,
-  getAdminAnalytics,
-  getTopCourses,
-  getTopTutors,
   getPendingReviews,
   approveReview,
   deleteReviewByAdmin,

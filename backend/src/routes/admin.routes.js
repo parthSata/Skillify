@@ -14,6 +14,9 @@ import {
   getPendingReviews,
   approveReview,
   deleteReviewByAdmin,
+  getRecentTransactions, // Import new controller functions
+  getMonthlyRevenue,
+  getCategoryStats,
 } from "../controllers/admin.controller.js";
 
 const router = Router();
@@ -25,6 +28,11 @@ router.use(verifyJWT, authorizeRoles(["admin"]));
 router.get("/analytics", getAdminAnalytics);
 router.get("/top-courses", getTopCourses);
 router.get("/top-tutors", getTopTutors);
+
+// NEW ANALYTICS ROUTES
+router.get("/recent-transactions", getRecentTransactions);
+router.get("/monthly-revenue", getMonthlyRevenue);
+router.get("/category-stats", getCategoryStats);
 
 // Tutor management routes
 router.get("/tutors", getAllTutors);
