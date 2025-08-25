@@ -12,13 +12,11 @@ import mongoose from "mongoose";
 import { Purchase } from "../models/purchase.model.js";
 import { Review } from "../models/review.model.js";
 
-// A new, cleaner helper function to process only NEW lecture files.
 const processNewLectures = async (lectureFiles, lectureTextData) => {
   const lectureIds = [];
   if (!lectureFiles || lectureFiles.length === 0) {
     return [];
-  } // The frontend should send text data and files in the same order.
-
+  }
   for (let i = 0; i < lectureFiles.length; i++) {
     const file = lectureFiles[i];
     const videoCloudinary = await uploadInCloudinary(file.path);
@@ -38,7 +36,6 @@ const processNewLectures = async (lectureFiles, lectureTextData) => {
       });
       lectureIds.push(newLecture._id);
     } else {
-      // Clean up file if upload fails
       if (fs.existsSync(file.path)) {
         fs.unlinkSync(file.path);
       }
@@ -49,7 +46,7 @@ const processNewLectures = async (lectureFiles, lectureTextData) => {
 
 // PUBLIC: GET ALL APPROVED COURSES
 const getAllApprovedCourses = asyncHandler(async (req, res) => {
-  const courses = await Course.find({ isApproved: true }) // Only fetch approved courses
+  const courses = await Course.find({ isApproved: true })
     .populate("category", "name")
     .populate("tutor", "name")
     .populate("lectures", "title duration description videoUrl");
@@ -102,7 +99,7 @@ const createCourse = asyncHandler(async (req, res) => {
   const thumbnailCloudinary = await uploadInCloudinary(thumbnailLocalPath);
   if (!thumbnailCloudinary) {
     throw new ApiError(500, "Failed to upload thumbnail to Cloudinary.");
-  } // Use the new helper function
+  }
 
   const newLectureIds = await processNewLectures(lectureFiles, lectureTextData);
 
@@ -149,7 +146,6 @@ const getAllCourses = asyncHandler(async (req, res) => {
 const getAllTutorCourses = asyncHandler(async (req, res) => {
   const tutorId = req.user._id;
 
-  // Use aggregation to fetch courses and join with Purchase and Review data
   const coursesWithStats = await Course.aggregate([
     {
       $match: {
@@ -243,7 +239,7 @@ const toggleCourseStatus = asyncHandler(async (req, res) => {
   }
 
   const course = await Course.findOneAndUpdate(
-    { _id: courseId, tutor: tutorId }, // Find by courseId AND tutorId to ensure ownership
+    { _id: courseId, tutor: tutorId },
     { $set: { isApproved: isApproved } },
     { new: true }
   );
@@ -273,7 +269,7 @@ const updateCourse = asyncHandler(async (req, res) => {
   const courseToUpdate = await Course.findById(courseId).populate("lectures");
   if (!courseToUpdate) {
     throw new ApiError(404, "Course not found.");
-  } // Handle thumbnail update if a new one is provided
+  }
 
   let thumbnailCloudinaryUrl = courseToUpdate.thumbnail;
   const thumbnailLocalPath = req.files?.thumbnail?.[0]?.path;
@@ -283,19 +279,19 @@ const updateCourse = asyncHandler(async (req, res) => {
       throw new ApiError(500, "Failed to upload new thumbnail.");
     }
     thumbnailCloudinaryUrl = uploadResult.url;
-  } // Parse incoming lecture data and files
+  }
 
   const incomingLectures = req.body.lectures || [];
-  const newLecturesTextData = incomingLectures.filter((l) => !l.id); // Process only the new lecture files with their corresponding text data
+  const newLecturesTextData = incomingLectures.filter((l) => !l.id);
 
   const newLectureIds = await processNewLectures(
     lectureFiles,
     newLecturesTextData
-  ); // Get IDs of existing lectures from the request
+  );
 
   const existingLectureIds = incomingLectures
     .filter((l) => l.id)
-    .map((l) => new mongoose.Types.ObjectId(l.id)); // Identify and delete old lectures that are not in the incoming request
+    .map((l) => new mongoose.Types.ObjectId(l.id));
 
   const lecturesToDelete = courseToUpdate.lectures
     .filter(
@@ -305,9 +301,9 @@ const updateCourse = asyncHandler(async (req, res) => {
 
   if (lecturesToDelete.length > 0) {
     await Lecture.deleteMany({ _id: { $in: lecturesToDelete } });
-  } // Combine all lecture IDs for the update
+  }
 
-  const updatedLectureIds = [...existingLectureIds, ...newLectureIds]; // Check if the category is valid before updating
+  const updatedLectureIds = [...existingLectureIds, ...newLectureIds];
 
   const categoryDocument = await Category.findById(category);
   if (!categoryDocument) {
@@ -331,7 +327,7 @@ const updateCourse = asyncHandler(async (req, res) => {
 
   if (!updatedCourse) {
     throw new ApiError(500, "Failed to update the course.");
-  } // Link new lectures to the updated course
+  }
 
   if (newLectureIds.length > 0) {
     await Lecture.updateMany(

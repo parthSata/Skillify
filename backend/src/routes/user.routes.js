@@ -1,3 +1,5 @@
+// src/routes/user.routes.js
+
 import express from "express";
 import { body, validationResult } from "express-validator";
 import {
@@ -6,9 +8,12 @@ import {
   logoutUser,
   getCurrentUser,
   refreshToken,
+  getPendingTutors,
+  approveTutor,
+  rejectTutor,
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 import { ApiError } from "../utils/ApiError.js";
 
 const router = express.Router();
@@ -50,7 +55,17 @@ router.post(
 
 router.post("/logout", verifyJWT, logoutUser);
 router.get("/me", verifyJWT, getCurrentUser);
-
 router.post("/refresh-token", refreshToken);
+
+// Admin-specific routes for user management
+router
+  .route("/admin/tutors/pending")
+  .get(verifyJWT, authorizeRoles("admin"), getPendingTutors);
+router
+  .route("/admin/tutors/:tutorId/approve")
+  .patch(verifyJWT, authorizeRoles("admin"), approveTutor);
+router
+  .route("/admin/tutors/:tutorId/reject")
+  .delete(verifyJWT, authorizeRoles("admin"), rejectTutor);
 
 export default router;

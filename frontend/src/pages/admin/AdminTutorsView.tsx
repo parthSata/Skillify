@@ -1,5 +1,3 @@
-// src/pages/admin/AdminTutorsView.tsx
-
 import React, { useState, useEffect } from 'react';
 import { Trash2, Check, Loader2 } from 'lucide-react';
 import axios from 'axios';
@@ -161,7 +159,7 @@ const AdminTutorsView: React.FC = () => {
                     title="Confirm Approval"
                     message="Are you sure you want to approve this tutor? The tutor will be able to log in after approval."
                     onConfirm={handleConfirmApprove}
-                    onCancel={handleCancelApprove} // This prop is now correct
+                    onClose={handleCancelApprove} // Corrected prop name
                 />
             )}
             {showDeleteDialog && (
@@ -170,7 +168,7 @@ const AdminTutorsView: React.FC = () => {
                     title="Confirm Deletion"
                     message="Are you sure you want to delete this tutor? This action cannot be undone."
                     onConfirm={handleConfirmDelete}
-                    onCancel={handleCancelDelete} // This prop is now correct
+                    onClose={handleCancelDelete} // Corrected prop name
                 />
             )}
         </div>

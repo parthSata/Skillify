@@ -1,3 +1,5 @@
+// src/controllers/user.controller.js
+
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -9,7 +11,7 @@ const cookieOptions = {
   httpOnly: true,
   secure: process.env.VITE_NODE_ENV === "production",
   sameSite: "lax",
-  path: "/", // <--- ENSURE THIS!
+  path: "/",
 };
 
 // --- REGISTER ---
@@ -104,7 +106,6 @@ const loginUser = asyncHandler(async (req, res) => {
 
 // --- LOGOUT ---
 const logoutUser = asyncHandler(async (req, res) => {
-  // Even if `req.user` is missing, we still want to clear cookies for security.
   try {
     const userId = req.user?._id;
     if (userId) {
@@ -117,7 +118,6 @@ const logoutUser = asyncHandler(async (req, res) => {
   } catch (err) {
     // log if needed
   }
-  // Always clear cookies
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
   return res
@@ -167,7 +167,6 @@ const refreshToken = asyncHandler(async (req, res) => {
       .status(200)
       .json(new ApiResponse(200, {}, "Token refreshed successfully"));
   } catch (error) {
-    // Always clear old cookies on refresh error!
     res.clearCookie("accessToken", cookieOptions);
     res.clearCookie("refreshToken", cookieOptions);
     throw new ApiError(401, "Invalid or expired refresh token");
@@ -177,13 +176,12 @@ const refreshToken = asyncHandler(async (req, res) => {
 const getEnrolledCourses = asyncHandler(async (req, res) => {
   const studentId = req.user._id;
 
-  // Find the student and populate their enrolled courses
   const student = await User.findById(studentId).populate({
     path: "enrolledCourses",
     model: "Course",
     populate: [
-      { path: "tutor", select: "name" }, // Only fetch the tutor's name
-      { path: "category", select: "name" }, // FIX: Add this line to populate the category name
+      { path: "tutor", select: "name" },
+      { path: "category", select: "name" },
     ],
   });
 
@@ -219,6 +217,53 @@ const checkEnrollmentStatus = asyncHandler(async (req, res) => {
     );
 });
 
+// NEW: GET all pending tutors
+const getPendingTutors = asyncHandler(async (req, res) => {
+  const pendingTutors = await User.find({
+    role: "tutor",
+    isApproved: false,
+  }).select("-password -refreshToken");
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        pendingTutors,
+        "Pending tutors fetched successfully."
+      )
+    );
+});
+
+// NEW: PATCH to approve a tutor
+const approveTutor = asyncHandler(async (req, res) => {
+  const { tutorId } = req.params;
+  const tutor = await User.findByIdAndUpdate(
+    tutorId,
+    { isApproved: true },
+    { new: true }
+  );
+  if (!tutor) {
+    throw new ApiError(404, "Tutor not found.");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, tutor, "Tutor approved successfully."));
+});
+
+// NEW: PATCH to reject (and optionally delete) a tutor
+const rejectTutor = asyncHandler(async (req, res) => {
+  const { tutorId } = req.params;
+  const tutor = await User.findByIdAndDelete(tutorId);
+  if (!tutor) {
+    throw new ApiError(404, "Tutor not found.");
+  }
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, null, "Tutor rejected and deleted successfully.")
+    );
+});
+
 export {
   checkEnrollmentStatus,
   registerUser,
@@ -227,4 +272,7 @@ export {
   getCurrentUser,
   refreshToken,
   getEnrolledCourses,
+  getPendingTutors,
+  approveTutor,
+  rejectTutor,
 };
