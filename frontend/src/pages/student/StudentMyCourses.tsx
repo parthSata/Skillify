@@ -18,6 +18,7 @@ interface Course {
     title: string;
     description: string;
     thumbnail: string;
+    // FIX: Tutor and category are now populated objects
     tutor: {
         _id: string;
         name: string;
@@ -26,7 +27,6 @@ interface Course {
     rating: number;
     students: number;
     duration: string;
-    // The category from the API is an object, not a string
     category: {
         _id: string;
         name: string;
@@ -64,17 +64,14 @@ interface APIResponse<T> {
 const API_BASE_URL = 'http://localhost:3000/api/v1';
 
 const StudentMyCourses: React.FC = () => {
-    // We now use only the state for the formatted data
     const [enrolledCourses, setEnrolledCourses] = useState<CourseCardPropsCourse[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>('All');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // State to hold the current student's ID
     const [currentStudentId, setCurrentStudentId] = useState<string | null>(null);
 
-    // Modal State
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
 
@@ -82,27 +79,25 @@ const StudentMyCourses: React.FC = () => {
         try {
             setLoading(true);
 
-            // Fetch user info first to get the current user ID
             const userResponse = await axios.get<APIResponse<{ _id: string }>>(`${API_BASE_URL}/users/me`, { withCredentials: true });
             setCurrentStudentId(userResponse.data.data._id);
 
-            // Corrected API endpoint and data access to match the backend structure
-            const coursesResponse = await axios.get<APIResponse<{ myCourses: Course[] }>>(`${API_BASE_URL}/student/my-courses`, { withCredentials: true });
+            const coursesResponse = await axios.get<APIResponse<{ stats: any, myCourses: Course[] }>>(`${API_BASE_URL}/student/dashboard`, { withCredentials: true });
             const categoriesResponse = await axios.get<APIResponse<Category[]>>(`${API_BASE_URL}/categories`, { withCredentials: true });
 
             if (coursesResponse.data.success && categoriesResponse.data.success) {
-                // Access the correct nested data property
                 const fetchedCourses = coursesResponse.data.data.myCourses;
 
                 const formatted = fetchedCourses.map(course => ({
                     ...course,
-                    // FIX: Add null-check for course.category to prevent errors
-                    category: course.category ? course.category.name : 'Uncategorized', // Use a default value
+                    // FIX: Pass the tutor object directly and use null-checks
+                    tutor: course.tutor,
+                    // FIX: Access the name property of the populated category object
+                    category: course.category?.name || 'Uncategorized',
                 }));
                 setEnrolledCourses(formatted);
                 setCategories(categoriesResponse.data.data);
 
-                // Save the full course data to local storage for the progress page to use
                 localStorage.setItem('enrolledCourses', JSON.stringify(fetchedCourses));
             } else {
                 setError('Failed to fetch data.');
@@ -127,6 +122,7 @@ const StudentMyCourses: React.FC = () => {
                 const formattedCourse = {
                     ...courseData,
                     isEnrolled: true,
+                    // FIX: Tutor is an object, not a string
                     tutor: courseData.tutor.name,
                     category: (courseData.category as any)?.name || courseData.category,
                     lectures: (courseData.lectures as any[]).map(l => ({ ...l, id: l._id, isLocked: false, isCompleted: false })),
@@ -151,7 +147,6 @@ const StudentMyCourses: React.FC = () => {
         toast.error("You are already enrolled in this course.");
     };
 
-    // Filter courses based on the selected category
     const filteredCourses = enrolledCourses.filter(course =>
         selectedCategory === 'All' || course.category === selectedCategory
     );

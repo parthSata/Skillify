@@ -8,7 +8,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import mongoose from "mongoose";
 
-// Helper function to create an initial admin user (kept for completeness)
 const createInitialAdmin = async () => {
   try {
     const existingAdmin = await User.findOne({ email: "Admin1709@gmail.com" });
@@ -30,7 +29,60 @@ const createInitialAdmin = async () => {
   }
 };
 
-// GET: Get overall analytics for the admin dashboard
+const loginAdmin = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    throw new ApiError(400, "Email and password required.");
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw new ApiError(404, "User does not exist.");
+  }
+
+  const isPasswordValid = await user.isPasswordCorrect(password);
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid password.");
+  }
+
+  // FIX: Only allow admin role to login from this route
+  if (user.role !== "admin") {
+    throw new ApiError(
+      403,
+      "Access denied. This portal is for administrators only."
+    );
+  }
+
+  const accessToken = user.generateAccessToken();
+  const refreshToken = user.generateRefreshToken();
+
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.VITE_NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+  };
+
+  res.cookie("accessToken", accessToken, {
+    ...cookieOptions,
+    maxAge: 24 * 60 * 60 * 1000,
+  });
+  res.cookie("refreshToken", refreshToken, {
+    ...cookieOptions,
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
+
+  const safeUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+  return res
+    .status(200)
+    .json(new ApiResponse(200, safeUser, "Admin logged in successfully."));
+});
+
 const getAdminAnalytics = asyncHandler(async (req, res) => {
   const totalCourses = await Course.countDocuments();
   const totalStudents = await User.countDocuments({ role: "student" });
@@ -49,7 +101,7 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
   const stats = {
     totalCourses,
     totalStudents,
-    totalTutors, // Use fallback to 0 if the aggregation pipeline returns no results
+    totalTutors,
     totalRevenue: totalRevenue.length > 0 ? totalRevenue[0].totalRevenue : 0,
     averageRating:
       averageRating.length > 0 ? averageRating[0].averageRating : 0,
@@ -62,7 +114,6 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
     );
 });
 
-// GET: Get top performing courses based on total revenue
 const getTopCourses = asyncHandler(async (req, res) => {
   const topCourses = await Course.aggregate([
     {
@@ -125,7 +176,6 @@ const getTopCourses = asyncHandler(async (req, res) => {
     );
 });
 
-// GET: Get top performing tutors based on total revenue from their courses
 const getTopTutors = asyncHandler(async (req, res) => {
   const topTutors = await User.aggregate([
     {
@@ -208,7 +258,6 @@ const getTopTutors = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, topTutors, "Top tutors fetched successfully."));
 });
 
-// NEW: Get recent completed transactions
 const getRecentTransactions = asyncHandler(async (req, res) => {
   const transactions = await Purchase.aggregate([
     {
@@ -269,13 +318,12 @@ const getRecentTransactions = asyncHandler(async (req, res) => {
     );
 });
 
-// NEW: Get monthly revenue data
 const getMonthlyRevenue = asyncHandler(async (req, res) => {
   const currentYear = new Date().getFullYear();
   const monthlyData = await Purchase.aggregate([
     {
       $match: {
-        status: "success", // Corrected to 'success' to match enum
+        status: "success",
         createdAt: {
           $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
           $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`),
@@ -322,12 +370,11 @@ const getMonthlyRevenue = asyncHandler(async (req, res) => {
     },
     {
       $sort: {
-        "_id.month": 1, // Sort on the numeric month to get correct order
+        "_id.month": 1,
       },
     },
   ]);
 
-  // Fill in missing months with 0 revenue
   const monthNames = [
     "Jan",
     "Feb",
@@ -352,7 +399,6 @@ const getMonthlyRevenue = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, formattedData, "Monthly revenue fetched."));
 });
 
-// NEW: Get statistics per category
 const getCategoryStats = asyncHandler(async (req, res) => {
   const categoryStats = await Category.aggregate([
     {
@@ -408,6 +454,9 @@ const getCategoryStats = asyncHandler(async (req, res) => {
     {
       $sort: { revenue: -1 },
     },
+    {
+      $limit: 5,
+    },
   ]);
 
   return res
@@ -420,8 +469,6 @@ const getCategoryStats = asyncHandler(async (req, res) => {
       )
     );
 });
-
-// All other existing controllers... (getPendingTutors, approveTutor, etc.) remain as they are.
 
 const getPendingTutors = asyncHandler(async (req, res) => {
   const tutors = await User.find({ role: "tutor", isApproved: false }).select(
@@ -494,7 +541,6 @@ const getAllStudents = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, students, "All students fetched successfully"));
 });
 
-// GET all reviews that are pending approval
 const getPendingReviews = asyncHandler(async (req, res) => {
   const reviews = await Review.find({ isApproved: false })
     .populate("student", "name avatar")
@@ -508,7 +554,6 @@ const getPendingReviews = asyncHandler(async (req, res) => {
     );
 });
 
-// PATCH to approve a review
 const approveReview = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
   const review = await Review.findByIdAndUpdate(
@@ -526,7 +571,6 @@ const approveReview = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, review, "Review approved successfully."));
 });
 
-// Admin-specific function to delete a review
 const deleteReviewByAdmin = asyncHandler(async (req, res) => {
   const { reviewId } = req.params;
 
@@ -534,7 +578,7 @@ const deleteReviewByAdmin = asyncHandler(async (req, res) => {
 
   if (!reviewToDelete) {
     throw new ApiError(404, "Review not found.");
-  } // Update the course's average rating after deleting a review
+  }
 
   if (reviewToDelete.course) {
     const course = await Course.findById(reviewToDelete.course);
@@ -555,6 +599,7 @@ const deleteReviewByAdmin = asyncHandler(async (req, res) => {
 
 export {
   createInitialAdmin,
+  loginAdmin,
   getAdminAnalytics,
   getTopCourses,
   getTopTutors,

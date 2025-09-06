@@ -14,23 +14,6 @@ const cookieOptions = {
   path: "/",
 };
 
-// A mock progress tracking mechanism for demonstration
-const mockProgress = (courseId, studentId) => {
-  const hash = (courseId + studentId)
-    .split("")
-    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  const progress = (hash % 100) + 1; // Generates a number from 1 to 100
-  const isCompleted = progress > 90;
-  const nextLesson = isCompleted
-    ? "No more lessons"
-    : `Lesson ${Math.floor(progress / 10) + 1}`;
-  return {
-    progress,
-    nextLesson,
-    status: isCompleted ? "completed" : "in-progress",
-  };
-};
-
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
   if (
@@ -97,6 +80,11 @@ const loginUser = asyncHandler(async (req, res) => {
   const isPasswordValid = await user.isPasswordCorrect(password);
   if (!isPasswordValid) throw new ApiError(401, "Invalid password");
 
+  // FIX: Do not allow admin to log in from this route
+  if (user.role === "admin") {
+    throw new ApiError(403, "Admins cannot use this login portal.");
+  }
+
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
@@ -130,9 +118,7 @@ const logoutUser = asyncHandler(async (req, res) => {
         await user.save();
       }
     }
-  } catch (err) {
-    // log if needed
-  }
+  } catch (err) {}
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("refreshToken", cookieOptions);
   return res
@@ -196,7 +182,11 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
   const student = await User.findById(studentId).populate({
     path: "enrolledCourses",
     model: "Course",
-    select: "title thumbnail",
+    select: "title thumbnail price rating duration lectures tutor category",
+    populate: [
+      { path: "tutor", model: "User", select: "name" },
+      { path: "category", model: "Category", select: "name" },
+    ],
   });
 
   if (!student) {
@@ -204,14 +194,21 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
   }
 
   const myCourses = student.enrolledCourses.map((course) => {
-    const progressData = mockProgress(
-      course._id.toString(),
-      studentId.toString()
-    );
+    const progressData = {
+      progress: 75,
+      nextLesson: "Redux Fundamentals",
+      status: "in-progress",
+    };
     return {
       _id: course._id,
       title: course.title,
       thumbnail: course.thumbnail,
+      price: course.price,
+      rating: course.rating,
+      duration: course.duration,
+      lectures: course.lectures,
+      tutor: course.tutor,
+      category: course.category,
       progress: progressData.progress,
       nextLesson: progressData.nextLesson,
       status: progressData.status,
@@ -226,7 +223,7 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     totalEnrolledCourses: myCourses.length,
     completedCourses: completedCourses,
     coursesInProgress: myCourses.length - completedCourses,
-    totalCertificates: completedCourses, // Assuming 1 certificate per completed course
+    totalCertificates: completedCourses,
   };
 
   return res.status(200).json(

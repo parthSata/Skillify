@@ -15,12 +15,16 @@ import {
   getRecentTransactions, // Import new controller functions
   getMonthlyRevenue,
   getCategoryStats,
+  loginAdmin,
 } from "../controllers/admin.controller.js";
 
 const router = Router();
 
 // Routes for Admin only, protected by JWT and role check
+router.post("/login", loginAdmin);
 router.use(verifyJWT, authorizeRoles(["admin"]));
+
+// This route is for admin login and should not be protected by auth middleware
 
 // Analytics and Dashboard routes
 router.get("/analytics", getAdminAnalytics);

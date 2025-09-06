@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star } from 'lucide-react'; // You were using an SVG, but you have Lucide icons available. Let's use the Lucide Star icon.
+import { Star } from 'lucide-react';
 
 interface Course {
     _id: string;
@@ -47,18 +47,15 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, onCourseClick }) => {
                 <div className="mt-3 flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                         <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{course.rating}</span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">({course.students}+)</span>
+                        <span className="text-sm text-gray-700 dark:text-gray-300">{course.rating || 'N/A'}</span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">({course.students || 0}+)</span>
                     </div>
-                    <span className="text-sm font-medium text-gray-900 dark:text-white">₹{course.price}</span>
+                    <span className="text-sm font-medium text-gray-900 dark:text-white">₹{course.price || '0.00'}</span>
                 </div>
                 <div className="mt-2 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400">
-                    {/* Add null-check for course.duration */}
                     {course.duration && <span>{course.duration}</span>}
-                    {/* Add null-check for course.lectures */}
                     {course.lectures && <span>{course.lectures.length} Lectures</span>}
                 </div>
-                {/* FIX: Add null-check for the tutor object */}
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Tutor: {course.tutor?.name || 'N/A'}</p>
             </div>
         </div>

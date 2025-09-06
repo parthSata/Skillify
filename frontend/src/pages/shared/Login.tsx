@@ -1,4 +1,3 @@
-// Login.tsx
 import React, { useState } from 'react';
 import { ArrowLeft, BookOpen, Mail, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,6 +23,7 @@ const Login: React.FC<LoginProps> = ({ onBack }) => {
     setError(null);
     setLoading(true);
     try {
+      // This login function is now for students and tutors only
       await login(formData.email, formData.password, navigate);
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred during login.');

@@ -1,4 +1,3 @@
-// AdminLogin.tsx
 import React, { useState } from "react";
 import { Mail, Lock, ArrowLeft, BookOpen } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +13,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const { login } = useAuth();
+  const { loginAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,8 +21,7 @@ const AdminLogin: React.FC<AdminLoginProps> = ({ onBack }) => {
     setError(null);
     setLoading(true);
     try {
-      // Pass the navigate function as the third argument
-      await login(email, password, navigate);
+      await loginAdmin(email, password, navigate);
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
