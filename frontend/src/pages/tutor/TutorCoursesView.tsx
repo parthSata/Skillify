@@ -73,7 +73,7 @@ const TutorCoursesView: React.FC = () => {
                     _id: course._id,
                     title: course.title,
                     students: course.students,
-                    revenue: new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(course.revenue),
+                    revenue: new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' }).format(course.revenue),
                     rating: course.rating || 0,
                     status: course.isApproved ? 'active' : 'pending',
                     thumbnail: course.thumbnail,

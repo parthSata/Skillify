@@ -1,12 +1,9 @@
-// src/components/AdminAnalyticsView.tsx
-
 import React, { useState, useEffect } from 'react';
 import {
     Users,
     BookOpen,
     DollarSign,
     UserCheck,
-    Download,
     RefreshCw,
     Star,
     BarChart3,
@@ -130,7 +127,8 @@ const AdminAnalyticsView: React.FC = () => {
                     tutors: 15.2,
                     courses: 6.7
                 },
-                topCourses: topCourses.data.map((course: any) => ({
+                // Use optional chaining and nullish coalescing to ensure data is an array
+                topCourses: topCourses.data?.map((course: any) => ({
                     id: course._id,
                     title: course.title,
                     tutor: course.tutor,
@@ -138,8 +136,8 @@ const AdminAnalyticsView: React.FC = () => {
                     revenue: course.revenue,
                     rating: course.rating,
                     thumbnail: course.thumbnail
-                })),
-                topTutors: topTutors.data.map((tutor: any) => ({
+                })) || [],
+                topTutors: topTutors.data?.map((tutor: any) => ({
                     id: tutor._id,
                     name: tutor.name,
                     courses: tutor.courses,
@@ -147,15 +145,15 @@ const AdminAnalyticsView: React.FC = () => {
                     revenue: tutor.revenue,
                     rating: tutor.rating,
                     avatar: tutor.avatar
-                })),
-                recentTransactions: recentTransactions.data.map((transaction: any) => ({
+                })) || [],
+                recentTransactions: recentTransactions.data?.map((transaction: any) => ({
                     id: transaction._id,
                     student: transaction.student,
                     course: transaction.course,
                     amount: transaction.amount,
                     date: new Date(transaction.date).toLocaleDateString(),
                     status: transaction.status,
-                })),
+                })) || [],
                 monthlyRevenue: monthlyRevenue.data,
                 categoryStats: categoryStats.data,
             });
@@ -237,13 +235,9 @@ const AdminAnalyticsView: React.FC = () => {
                                 <option value="90d">Last 90 days</option>
                                 <option value="1y">Last year</option>
                             </select>
-                            <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                                <Download className="w-4 h-4" />
-                                <span>Export</span>
-                            </button>
-                            <button onClick={fetchAdminData} className="flex items-center space-x-2 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                <RefreshCw className="w-4 h-4" />
-                                <span>Refresh</span>
+                            <button onClick={fetchAdminData} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 flex items-center gap-2 dark:text-white">
+                                <RefreshCw className="w-4 h-4 text-white" />
+                                <span className='text-white'>Refresh</span>
                             </button>
                         </div>
                     </div>
@@ -255,7 +249,6 @@ const AdminAnalyticsView: React.FC = () => {
                             value={analyticsData.totalRevenue}
                             icon={DollarSign}
                             color="green"
-                            prefix="$"
                         />
                         <StatCard
                             title="Total Students"
@@ -320,7 +313,7 @@ const AdminAnalyticsView: React.FC = () => {
                                                         ></div>
                                                     </div>
                                                     <span className="text-sm font-medium text-gray-900 dark:text-white">
-                                                        ${item.revenue.toLocaleString()}
+                                                        {item.revenue.toLocaleString()}
                                                     </span>
                                                 </div>
                                             </div>
@@ -358,41 +351,45 @@ const AdminAnalyticsView: React.FC = () => {
                         {activeTab === 'courses' && (
                             <ChartCard title="Top Performing Courses">
                                 <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Course</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Tutor</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Students</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Revenue</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Rating</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {analyticsData.topCourses.map((course) => (
-                                                <tr key={course.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                                    <td className="py-4 px-4">
-                                                        <div className="flex items-center space-x-3">
-                                                            <img src={course.thumbnail} alt={course.title} className="w-12 h-12 object-cover rounded-lg" />
-                                                            <div>
-                                                                <div className="font-medium text-gray-900 dark:text-white">{course.title}</div>
-                                                                <div className="text-sm text-gray-500 dark:text-gray-400">by {course.tutor}</div>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                    <td className="py-4 px-4 text-gray-900 dark:text-white">{course.tutor}</td>
-                                                    <td className="py-4 px-4 text-gray-900 dark:text-white">{course.students.toLocaleString()}</td>
-                                                    <td className="py-4 px-4 text-gray-900 dark:text-white">${course.revenue.toLocaleString()}</td>
-                                                    <td className="py-4 px-4">
-                                                        <div className="flex items-center space-x-1">
-                                                            <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                                                            <span className="text-gray-900 dark:text-white">{course.rating}</span>
-                                                        </div>
-                                                    </td>
+                                    {analyticsData.topCourses.length > 0 ? (
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b border-gray-200 dark:border-gray-700">
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Course</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Tutor</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Students</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Revenue</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Rating</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {analyticsData.topCourses.map((course) => (
+                                                    <tr key={course.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <td className="py-4 px-4">
+                                                            <div className="flex items-center space-x-3">
+                                                                <img src={course.thumbnail} alt={course.title} className="w-12 h-12 object-cover rounded-lg" />
+                                                                <div>
+                                                                    <div className="font-medium text-gray-900 dark:text-white">{course.title}</div>
+                                                                    <div className="text-sm text-gray-500 dark:text-gray-400">by {course.tutor}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="py-4 px-4 text-gray-900 dark:text-white">{course.tutor}</td>
+                                                        <td className="py-4 px-4 text-gray-900 dark:text-white">{course.students.toLocaleString()}</td>
+                                                        <td className="py-4 px-4 text-gray-900 dark:text-white">{course.revenue.toLocaleString()}</td>
+                                                        <td className="py-4 px-4">
+                                                            <div className="flex items-center space-x-1">
+                                                                <Star className="w-4 h-4 text-yellow-400 fill-current" />
+                                                                <span className="text-gray-900 dark:text-white">{course.rating}</span>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <div className="text-center text-gray-500 dark:text-gray-400 py-10">No top courses found.</div>
+                                    )}
                                 </div>
                             </ChartCard>
                         )}
@@ -400,34 +397,41 @@ const AdminAnalyticsView: React.FC = () => {
                         {activeTab === 'tutors' && (
                             <ChartCard title="Top Performing Tutors">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {analyticsData.topTutors.map((tutor) => (
-                                        <div key={tutor.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all duration-300">
-                                            <div className="flex items-center space-x-3 mb-3">
-                                                <img src={tutor.avatar} alt={tutor.name} className="w-12 h-12 object-cover rounded-full" />
-                                                <div>
-                                                    <h4 className="font-medium text-gray-900 dark:text-white">{tutor.name}</h4>
-                                                    <div className="flex items-center space-x-1">
-                                                        <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                                                        <span className="text-sm text-gray-600 dark:text-gray-400">{tutor.rating}</span>
+                                    {analyticsData.topTutors.length > 0 ? (
+                                        analyticsData.topTutors.map((tutor) => (
+                                            <div key={tutor.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-md transition-all duration-300">
+                                                <div className="flex items-center space-x-3 mb-3">
+                                                    <img src={tutor.avatar} alt={tutor.name} onError={(e) => {
+                                                        const initial = tutor.avatar ? tutor.name.charAt(0).toUpperCase() : 'U';
+                                                        e.currentTarget.src = `https://placehold.co/40x40/60a5fa/ffffff?text=${initial}`;
+                                                    }} className="w-12 h-12 object-cover rounded-full" />
+                                                    <div>
+                                                        <h4 className="font-medium text-gray-900 dark:text-white">{tutor.name}</h4>
+                                                        <div className="flex items-center space-x-1">
+                                                            <Star className="w-3 h-3 text-yellow-400 fill-current" />
+                                                            <span className="text-sm text-gray-600 dark:text-gray-400">{tutor.rating}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 dark:text-gray-400">Courses:</span>
+                                                        <span className="font-medium text-gray-900 dark:text-white">{tutor.courses}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 dark:text-gray-400">Students:</span>
+                                                        <span className="font-medium text-gray-900 dark:text-white">{tutor.students.toLocaleString()}</span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 dark:text-gray-400">Revenue:</span>
+                                                        <span className="font-medium text-green-600">{tutor.revenue.toLocaleString()}</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div className="space-y-2 text-sm">
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">Courses:</span>
-                                                    <span className="font-medium text-gray-900 dark:text-white">{tutor.courses}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">Students:</span>
-                                                    <span className="font-medium text-gray-900 dark:text-white">{tutor.students.toLocaleString()}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 dark:text-gray-400">Revenue:</span>
-                                                    <span className="font-medium text-green-600">${tutor.revenue.toLocaleString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    ) : (
+                                        <div className="col-span-full text-center text-gray-500 dark:text-gray-400 py-10">No top tutors found.</div>
+                                    )}
                                 </div>
                             </ChartCard>
                         )}
@@ -435,37 +439,41 @@ const AdminAnalyticsView: React.FC = () => {
                         {activeTab === 'transactions' && (
                             <ChartCard title="Recent Transactions">
                                 <div className="overflow-x-auto">
-                                    <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Student</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Course</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Amount</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Date</th>
-                                                <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {analyticsData.recentTransactions.map((transaction) => (
-                                                <tr key={transaction.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                                                    <td className="py-4 px-4 text-gray-900 dark:text-white">{transaction.student}</td>
-                                                    <td className="py-4 px-4 text-gray-900 dark:text-white">{transaction.course}</td>
-                                                    <td className="py-4 px-4 text-gray-900 dark:text-white">${transaction.amount}</td>
-                                                    <td className="py-4 px-4 text-gray-600 dark:text-gray-400">{transaction.date}</td>
-                                                    <td className="py-4 px-4">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.status === 'completed'
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                                            : transaction.status === 'pending'
-                                                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                                                                : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                                                            }`}>
-                                                            {transaction.status}
-                                                        </span>
-                                                    </td>
+                                    {analyticsData.recentTransactions.length > 0 ? (
+                                        <table className="w-full">
+                                            <thead>
+                                                <tr className="border-b border-gray-200 dark:border-gray-700">
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Student</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Course</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Amount</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Date</th>
+                                                    <th className="text-left py-3 px-4 font-medium text-gray-900 dark:text-white">Status</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {analyticsData.recentTransactions.map((transaction) => (
+                                                    <tr key={transaction.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                                                        <td className="py-4 px-4 text-gray-900 dark:text-white">{transaction.student}</td>
+                                                        <td className="py-4 px-4 text-gray-900 dark:text-white">{transaction.course}</td>
+                                                        <td className="py-4 px-4 text-gray-900 dark:text-white">{transaction.amount}</td>
+                                                        <td className="py-4 px-4 text-gray-600 dark:text-gray-400">{transaction.date}</td>
+                                                        <td className="py-4 px-4">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${transaction.status === 'completed'
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                                                : transaction.status === 'pending'
+                                                                    ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
+                                                                    : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                                                                }`}>
+                                                                {transaction.status}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : (
+                                        <div className="text-center text-gray-500 dark:text-gray-400 py-10">No recent transactions found.</div>
+                                    )}
                                 </div>
                             </ChartCard>
                         )}
@@ -484,7 +492,7 @@ const AdminAnalyticsView: React.FC = () => {
                                                         ></div>
                                                         <span className="font-medium text-gray-900 dark:text-white">{category.name}</span>
                                                     </div>
-                                                    <span className="text-sm text-green-600 font-medium">${category.revenue.toLocaleString()}</span>
+                                                    <span className="text-sm text-green-600 font-medium">{category.revenue.toLocaleString()}</span>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                                     <div>

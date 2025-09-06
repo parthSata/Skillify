@@ -1,5 +1,3 @@
-// src/controllers/course.controller.js
-
 import { Course } from "../models/course.model.js";
 import { Category } from "../models/category.model.js";
 import { Lecture } from "../models/lecture.model.js";

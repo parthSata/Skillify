@@ -1,5 +1,3 @@
-// src/controllers/admin.controller.js
-
 import { User } from "../models/user.model.js";
 import { Course } from "../models/course.model.js";
 import { Purchase } from "../models/purchase.model.js";
@@ -41,7 +39,7 @@ const getAdminAnalytics = asyncHandler(async (req, res) => {
     isApproved: true,
   });
   const totalRevenue = await Purchase.aggregate([
-    { $match: { status: "completed" } },
+    { $match: { status: "success" } },
     { $group: { _id: null, totalRevenue: { $sum: "$amount" } } },
   ]);
   const averageRating = await Review.aggregate([
@@ -73,17 +71,13 @@ const getTopCourses = asyncHandler(async (req, res) => {
         localField: "_id",
         foreignField: "course",
         as: "purchases",
-      },
-    },
-    {
-      $match: {
-        "purchases.status": "completed",
-      },
-    },
-    {
-      $addFields: {
-        totalRevenue: { $sum: "$purchases.amount" },
-        studentCount: { $size: "$purchases" },
+        pipeline: [
+          {
+            $match: {
+              status: "success",
+            },
+          },
+        ],
       },
     },
     {
@@ -106,28 +100,24 @@ const getTopCourses = asyncHandler(async (req, res) => {
       },
     },
     {
-      $addFields: {
-        averageRating: { $avg: "$reviews.rating" },
-      },
-    },
-    {
-      $sort: { totalRevenue: -1 },
-    },
-    {
-      $limit: 5,
-    },
-    {
       $project: {
         _id: 1,
         title: 1,
         thumbnail: 1,
         tutor: "$tutorDetails.name",
-        students: "$studentCount",
-        revenue: "$totalRevenue",
-        rating: { $ifNull: ["$averageRating", 0] },
+        students: { $size: "$purchases" },
+        revenue: { $sum: "$purchases.amount" },
+        rating: { $avg: "$reviews.rating" },
       },
     },
+    {
+      $sort: { revenue: -1 },
+    },
+    {
+      $limit: 5,
+    },
   ]);
+
   return res
     .status(200)
     .json(
@@ -137,39 +127,41 @@ const getTopCourses = asyncHandler(async (req, res) => {
 
 // GET: Get top performing tutors based on total revenue from their courses
 const getTopTutors = asyncHandler(async (req, res) => {
-  const topTutors = await Course.aggregate([
+  const topTutors = await User.aggregate([
+    {
+      $match: {
+        role: "tutor",
+        isApproved: true,
+      },
+    },
+    {
+      $lookup: {
+        from: "courses",
+        localField: "_id",
+        foreignField: "tutor",
+        as: "coursesTaught",
+      },
+    },
+    {
+      $unwind: {
+        path: "$coursesTaught",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
     {
       $lookup: {
         from: "purchases",
-        localField: "_id",
+        localField: "coursesTaught._id",
         foreignField: "course",
         as: "purchases",
+        pipeline: [
+          {
+            $match: {
+              status: "success",
+            },
+          },
+        ],
       },
-    },
-    {
-      $unwind: "$purchases",
-    },
-    {
-      $match: { "purchases.status": "completed" },
-    },
-    {
-      $group: {
-        _id: "$tutor",
-        totalRevenue: { $sum: "$purchases.amount" },
-        courses: { $addToSet: "$_id" },
-        students: { $addToSet: "$purchases.student" },
-      },
-    },
-    {
-      $lookup: {
-        from: "users",
-        localField: "_id",
-        foreignField: "_id",
-        as: "tutorDetails",
-      },
-    },
-    {
-      $unwind: "$tutorDetails",
     },
     {
       $lookup: {
@@ -180,28 +172,37 @@ const getTopTutors = asyncHandler(async (req, res) => {
       },
     },
     {
-      $addFields: {
-        averageRating: { $avg: "$reviews.rating" },
+      $group: {
+        _id: "$_id",
+        name: { $first: "$name" },
+        avatar: { $first: "$avatar" },
+        courses: {
+          $sum: { $cond: [{ $ifNull: ["$coursesTaught", false] }, 1, 0] },
+        },
+        students: { $addToSet: "$purchases.student" },
+        revenue: { $sum: { $sum: "$purchases.amount" } },
+        rating: { $avg: "$reviews.rating" },
       },
-    },
-    {
-      $sort: { totalRevenue: -1 },
-    },
-    {
-      $limit: 5,
     },
     {
       $project: {
         _id: 1,
-        name: "$tutorDetails.name",
-        avatar: "$tutorDetails.avatar",
-        courses: { $size: "$courses" },
+        name: 1,
+        avatar: 1,
+        courses: 1,
         students: { $size: "$students" },
-        revenue: "$totalRevenue",
-        rating: { $ifNull: ["$averageRating", 0] },
+        revenue: { $ifNull: ["$revenue", 0] },
+        rating: { $ifNull: ["$rating", 0] },
       },
     },
+    {
+      $sort: { revenue: -1 },
+    },
+    {
+      $limit: 5,
+    },
   ]);
+
   return res
     .status(200)
     .json(new ApiResponse(200, topTutors, "Top tutors fetched successfully."));
@@ -212,7 +213,7 @@ const getRecentTransactions = asyncHandler(async (req, res) => {
   const transactions = await Purchase.aggregate([
     {
       $match: {
-        status: "completed",
+        status: "success",
       },
     },
     {
@@ -274,7 +275,7 @@ const getMonthlyRevenue = asyncHandler(async (req, res) => {
   const monthlyData = await Purchase.aggregate([
     {
       $match: {
-        status: "completed",
+        status: "success", // Corrected to 'success' to match enum
         createdAt: {
           $gte: new Date(`${currentYear}-01-01T00:00:00.000Z`),
           $lt: new Date(`${currentYear + 1}-01-01T00:00:00.000Z`),
@@ -321,14 +322,34 @@ const getMonthlyRevenue = asyncHandler(async (req, res) => {
     },
     {
       $sort: {
-        month: 1,
+        "_id.month": 1, // Sort on the numeric month to get correct order
       },
     },
   ]);
 
+  // Fill in missing months with 0 revenue
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const formattedData = monthNames.map((month) => {
+    const existingData = monthlyData.find((d) => d.month === month);
+    return existingData || { month, revenue: 0, students: 0 };
+  });
+
   return res
     .status(200)
-    .json(new ApiResponse(200, monthlyData, "Monthly revenue fetched."));
+    .json(new ApiResponse(200, formattedData, "Monthly revenue fetched."));
 });
 
 // NEW: Get statistics per category
@@ -359,7 +380,7 @@ const getCategoryStats = asyncHandler(async (req, res) => {
     {
       $match: {
         $or: [
-          { "purchases.status": "completed" },
+          { "purchases.status": "success" },
           { purchases: { $exists: false } },
         ],
       },

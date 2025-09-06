@@ -1,11 +1,11 @@
-// src/controllers/user.controller.js
-
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { uploadInCloudinary } from "../utils/cloudinary.js";
 import jwt from "jsonwebtoken";
+import { Course } from "../models/course.model.js";
+import mongoose from "mongoose";
 
 const cookieOptions = {
   httpOnly: true,
@@ -14,7 +14,23 @@ const cookieOptions = {
   path: "/",
 };
 
-// --- REGISTER ---
+// A mock progress tracking mechanism for demonstration
+const mockProgress = (courseId, studentId) => {
+  const hash = (courseId + studentId)
+    .split("")
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const progress = (hash % 100) + 1; // Generates a number from 1 to 100
+  const isCompleted = progress > 90;
+  const nextLesson = isCompleted
+    ? "No more lessons"
+    : `Lesson ${Math.floor(progress / 10) + 1}`;
+  return {
+    progress,
+    nextLesson,
+    status: isCompleted ? "completed" : "in-progress",
+  };
+};
+
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password, role } = req.body;
   if (
@@ -69,7 +85,7 @@ const registerUser = asyncHandler(async (req, res) => {
     .status(201)
     .json(new ApiResponse(201, safeUser, "User registered successfully"));
 });
-// --- LOGIN ---
+
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password)
@@ -104,7 +120,6 @@ const loginUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, safeUser, "User logged in successfully"));
 });
 
-// --- LOGOUT ---
 const logoutUser = asyncHandler(async (req, res) => {
   try {
     const userId = req.user?._id;
@@ -125,7 +140,6 @@ const logoutUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Logged out successfully"));
 });
 
-// --- GET CURRENT USER ---
 const getCurrentUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id).select("-password ");
   if (!user) throw new ApiError(404, "User not found");
@@ -134,7 +148,6 @@ const getCurrentUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, user, "User fetched successfully"));
 });
 
-// --- REFRESH TOKEN ---
 const refreshToken = asyncHandler(async (req, res) => {
   const tokenFromCookie = req.cookies?.refreshToken;
   if (!tokenFromCookie) throw new ApiError(401, "No refresh token provided");
@@ -173,51 +186,81 @@ const refreshToken = asyncHandler(async (req, res) => {
   }
 });
 
-const getEnrolledCourses = asyncHandler(async (req, res) => {
+const getStudentDashboard = asyncHandler(async (req, res) => {
   const studentId = req.user._id;
+
+  if (!studentId) {
+    throw new ApiError(401, "User not authenticated.");
+  }
 
   const student = await User.findById(studentId).populate({
     path: "enrolledCourses",
     model: "Course",
-    populate: [
-      { path: "tutor", select: "name" },
-      { path: "category", select: "name" },
-    ],
+    select: "title thumbnail",
   });
 
   if (!student) {
     throw new ApiError(404, "Student not found.");
   }
 
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        student.enrolledCourses,
-        "Enrolled courses fetched successfully."
-      )
+  const myCourses = student.enrolledCourses.map((course) => {
+    const progressData = mockProgress(
+      course._id.toString(),
+      studentId.toString()
     );
+    return {
+      _id: course._id,
+      title: course.title,
+      thumbnail: course.thumbnail,
+      progress: progressData.progress,
+      nextLesson: progressData.nextLesson,
+      status: progressData.status,
+    };
+  });
+
+  const completedCourses = myCourses.filter(
+    (course) => course.status === "completed"
+  ).length;
+
+  const stats = {
+    totalEnrolledCourses: myCourses.length,
+    completedCourses: completedCourses,
+    coursesInProgress: myCourses.length - completedCourses,
+    totalCertificates: completedCourses, // Assuming 1 certificate per completed course
+  };
+
+  return res.status(200).json(
+    new ApiResponse(
+      200,
+      {
+        stats,
+        myCourses,
+      },
+      "Student dashboard data fetched successfully."
+    )
+  );
 });
 
 const checkEnrollmentStatus = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
   const student = req.user;
 
-  const isEnrolled = student.enrolledCourses.includes(courseId);
+  const isEnrolled = await User.exists({
+    _id: student._id,
+    enrolledCourses: courseId,
+  });
 
   return res
     .status(200)
     .json(
       new ApiResponse(
         200,
-        { isEnrolled },
+        { isEnrolled: !!isEnrolled },
         "Enrollment status fetched successfully."
       )
     );
 });
 
-// NEW: GET all pending tutors
 const getPendingTutors = asyncHandler(async (req, res) => {
   const pendingTutors = await User.find({
     role: "tutor",
@@ -234,7 +277,6 @@ const getPendingTutors = asyncHandler(async (req, res) => {
     );
 });
 
-// NEW: PATCH to approve a tutor
 const approveTutor = asyncHandler(async (req, res) => {
   const { tutorId } = req.params;
   const tutor = await User.findByIdAndUpdate(
@@ -250,7 +292,6 @@ const approveTutor = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, tutor, "Tutor approved successfully."));
 });
 
-// NEW: PATCH to reject (and optionally delete) a tutor
 const rejectTutor = asyncHandler(async (req, res) => {
   const { tutorId } = req.params;
   const tutor = await User.findByIdAndDelete(tutorId);
@@ -271,8 +312,8 @@ export {
   logoutUser,
   getCurrentUser,
   refreshToken,
-  getEnrolledCourses,
   getPendingTutors,
   approveTutor,
   rejectTutor,
+  getStudentDashboard,
 };

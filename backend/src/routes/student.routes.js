@@ -1,19 +1,18 @@
-// src/routes/student.routes.js
-
 import { Router } from "express";
 import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 import {
-  getEnrolledCourses,
+  getStudentDashboard,
   checkEnrollmentStatus,
-} from "../controllers/user.controller.js"; // We will create this controller function
+} from "../controllers/user.controller.js";
 
 const router = Router();
 
-// Protect all routes with student authorization
+// Protect all student routes with JWT and student role check
 router.use(verifyJWT, authorizeRoles(["student"]));
 
-// Define the new route for fetching enrolled courses
-router.route("/my-courses").get(getEnrolledCourses);
+router.route("/dashboard").get(getStudentDashboard);
+router.route("/my-courses").get(getStudentDashboard);
+
 router.route("/enrollment-status/:courseId").get(checkEnrollmentStatus);
 
 export default router;

@@ -1,15 +1,7 @@
-// src/pages/student/StudentMyCourses.tsx
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-hot-toast';
 import { CourseCard, CourseDetailModal } from '@/components/index';
-
-// --- Imports for the new feature
-// Removed the unused 'Filter' import
-// import { Filter } from 'lucide-react';
-
-const API_BASE_URL = 'http://localhost:3000/api/v1';
 
 // Define data interfaces
 interface Lecture {
@@ -69,6 +61,8 @@ interface APIResponse<T> {
     message?: string;
 }
 
+const API_BASE_URL = 'http://localhost:3000/api/v1';
+
 const StudentMyCourses: React.FC = () => {
     // We now use only the state for the formatted data
     const [enrolledCourses, setEnrolledCourses] = useState<CourseCardPropsCourse[]>([]);
@@ -88,18 +82,21 @@ const StudentMyCourses: React.FC = () => {
         try {
             setLoading(true);
 
-            const userResponse = await axios.get<APIResponse<{ _id: string }>>(`${API_BASE_URL}/users/me`);
+            // Fetch user info first to get the current user ID
+            const userResponse = await axios.get<APIResponse<{ _id: string }>>(`${API_BASE_URL}/users/me`, { withCredentials: true });
             setCurrentStudentId(userResponse.data.data._id);
 
-            const coursesResponse = await axios.get<APIResponse<Course[]>>(`${API_BASE_URL}/student/my-courses`);
-            const categoriesResponse = await axios.get<APIResponse<Category[]>>(`${API_BASE_URL}/categories`);
+            // Corrected API endpoint and data access to match the backend structure
+            const coursesResponse = await axios.get<APIResponse<{ myCourses: Course[] }>>(`${API_BASE_URL}/student/my-courses`, { withCredentials: true });
+            const categoriesResponse = await axios.get<APIResponse<Category[]>>(`${API_BASE_URL}/categories`, { withCredentials: true });
 
             if (coursesResponse.data.success && categoriesResponse.data.success) {
-                const fetchedCourses = coursesResponse.data.data;
+                // Access the correct nested data property
+                const fetchedCourses = coursesResponse.data.data.myCourses;
 
-                // FIX: Add null-check for course.category to prevent errors
                 const formatted = fetchedCourses.map(course => ({
                     ...course,
+                    // FIX: Add null-check for course.category to prevent errors
                     category: course.category ? course.category.name : 'Uncategorized', // Use a default value
                 }));
                 setEnrolledCourses(formatted);
@@ -124,22 +121,15 @@ const StudentMyCourses: React.FC = () => {
 
     const openCourseModal = async (_id: string) => {
         try {
-            const courseResponse = await axios.get<APIResponse<Course>>(`${API_BASE_URL}/courses/${_id}`);
+            const courseResponse = await axios.get<APIResponse<Course>>(`${API_BASE_URL}/courses/${_id}`, { withCredentials: true });
             if (courseResponse.data.success) {
                 const courseData = courseResponse.data.data;
                 const formattedCourse = {
                     ...courseData,
                     isEnrolled: true,
-                    // Ensure tutor and category are formatted correctly for the modal
                     tutor: courseData.tutor.name,
-                    category: courseData.category.name,
-                    // Map _id to id for lectures
-                    lectures: (courseData.lectures as any[]).map(l => ({
-                        ...l,
-                        id: l._id,
-                        isLocked: false,
-                        isCompleted: false
-                    })),
+                    category: (courseData.category as any)?.name || courseData.category,
+                    lectures: (courseData.lectures as any[]).map(l => ({ ...l, id: l._id, isLocked: false, isCompleted: false })),
                 };
                 setSelectedCourse(formattedCourse as any);
                 setIsModalOpen(true);
@@ -157,7 +147,6 @@ const StudentMyCourses: React.FC = () => {
         setSelectedCourse(null);
     };
 
-    // A dummy function for the onEnroll prop since these courses are already enrolled
     const noopEnroll = () => {
         toast.error("You are already enrolled in this course.");
     };

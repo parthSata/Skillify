@@ -74,7 +74,7 @@ const TutorCoursesTable: React.FC<TutorCoursesTableProps> = ({ courses, onEdit, 
                                         {course.students || 0}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                                        {course.revenue || '$0'}
+                                        {course.revenue || '0'}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {course.rating ? course.rating.toFixed(1) : 'N/A'}

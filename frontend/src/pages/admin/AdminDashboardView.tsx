@@ -171,7 +171,7 @@ const AdminDashboardView: React.FC = () => {
     const adminStats = stats ? [
         { title: 'Total Courses', value: stats.totalCourses, icon: BookOpen, color: 'blue' },
         { title: 'Total Students', value: stats.totalStudents, icon: Users, color: 'green' },
-        { title: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'purple' },
+        { title: 'Total Revenue', value: `${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'purple' },
         { title: 'Average Rating', value: stats.averageRating.toFixed(1), icon: TrendingUp, color: 'orange' },
     ] : [];
 

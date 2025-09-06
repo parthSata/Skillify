@@ -1,5 +1,3 @@
-// src/routes/admin.routes.js
-
 import { Router } from "express";
 import { verifyJWT, authorizeRoles } from "../middlewares/auth.middleware.js";
 import {
